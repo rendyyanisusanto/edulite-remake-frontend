@@ -22,7 +22,7 @@
       <template #cell-result="{ item }">
         <div class="font-medium text-blue-700">{{ item.rank || '-' }}</div>
         <div class="text-xs text-gray-500">Kategori: {{ item.category || '-' }}</div>
-        <div v-if="item.point_rule" class="text-xs text-green-600 mt-1">Aturan: {{ item.point_rule.level }} - {{ item.point_rule.category }} (+{{ item.point_rule.points }})</div>
+        <div v-if="item.point_rule" class="text-xs text-green-600 mt-1">Aturan: {{ item.point_rule.level }} - {{ item.point_rule.rank }} {{ item.point_rule.category ? '- ' + item.point_rule.category : '' }} (+{{ item.point_rule.points }})</div>
       </template>
       <template #cell-actions="{ item }">
         <div class="flex items-center space-x-2">
@@ -149,11 +149,16 @@ const fetchPointRuleOptions = async (query) => {
     const res = await achievementService.getPointRules({ search: query, limit: 10 });
     const rules = res.data?.rules || [];
     pointRulesCache = rules; // Cache for finding points later
-    return rules.map(item => ({
-      value: item.id,
-      label: `${item.level} - ${item.category || item.rank}`,
-      description: `Poin: +${item.points}`
-    }))
+    return rules.map(item => {
+      const labelParts = [item.level];
+      if (item.rank) labelParts.push(item.rank);
+      if (item.category) labelParts.push(item.category);
+      return {
+        value: item.id,
+        label: labelParts.join(' - '),
+        description: `Poin: +${item.points}`
+      }
+    })
   } catch (error) { return [] }
 }
 
@@ -211,10 +216,14 @@ const openEditModal = (item) => {
   const title = p?.achievement?.title || '';
   const pr = item.point_rule;
 
+  const labelParts = [pr?.level];
+  if (pr?.rank) labelParts.push(pr.rank);
+  if (pr?.category) labelParts.push(pr.category);
+
   Object.assign(form, {
       ...item,
       participant_label: name && title ? `${name} - ${title}` : '',
-      point_rule_label: pr ? `${pr.level} - ${pr.category || pr.rank}` : ''
+      point_rule_label: pr ? labelParts.filter(Boolean).join(' - ') : ''
   });
   uploadedFile.value = null;
   showModal.value = true 
