@@ -180,8 +180,8 @@ onMounted(async () => {
   fetchData(); 
   try {
     const res = await academicYearService.getAll({ limit: 100 });
-    if(res.data?.years) {
-      academicYears.value = res.data.years;
+    if(res.data?.academicYears) {
+      academicYears.value = res.data.academicYears;
     }
   } catch (err) {}
 })
