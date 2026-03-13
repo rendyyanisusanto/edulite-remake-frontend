@@ -186,6 +186,8 @@ const menuGroups = [
       { name: 'Jenis Pelanggaran', route: '/violation-types' },
       { name: 'Level Pelanggaran', route: '/violation-levels' },
       { name: 'Data Pelanggaran Siswa', route: '/student-violations' },
+      { name: 'Jenis Catatan Positif', route: '/positive-point-types' },
+      { name: 'Catatan Positif Siswa', route: '/student-positive-points' },
       { name: 'Kasus Konseling', route: '/counseling-cases' },
       { name: 'Sesi Konseling', route: '/counseling-sessions' },
       { name: 'Tindak Lanjut Konseling', route: '/counseling-followups' },
