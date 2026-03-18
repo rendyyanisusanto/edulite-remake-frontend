@@ -55,6 +55,7 @@ const routes = [
 
             // Administrasi
             { path: 'guestbooks', name: 'Guestbooks', component: () => import('@/views/administration/GuestbooksView.vue') },
+            { path: 'permission-letters', name: 'PermissionLetters', component: () => import('@/views/administration/PermissionLettersView.vue') },
             { path: 'incoming-mail', name: 'IncomingMail', component: () => import('@/views/administration/IncomingMailView.vue') },
             { path: 'outgoing-mail', name: 'OutgoingMail', component: () => import('@/views/administration/OutgoingMailView.vue') },
             { path: 'mail-disposition', name: 'MailDisposition', component: () => import('@/views/administration/MailDispositionView.vue') },

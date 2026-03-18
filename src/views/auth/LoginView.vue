@@ -78,10 +78,9 @@ const handleLogin = async () => {
     loading.value = true
     try {
         const response = await authService.login(email.value, password.value)
-        
-        // Save token and user details to store
-        authStore.login(response.user, response.token)
-        
+        // response = { success, data: { access_token, user, roles, permissions } }
+        const loginData = response.data || response
+        authStore.login(loginData)
         success('Login berhasil! Selamat datang.')
         router.push('/dashboard')
     } catch (err) {

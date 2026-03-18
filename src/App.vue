@@ -18,7 +18,7 @@ watch(toasts, (newToasts) => {
     const latestToast = newToasts[newToasts.length - 1]
     toastRef.value.addToast(latestToast)
     // Clean up so it doesn't get re-added
-    toasts.splice(0, toasts.length)
+    toasts.value.splice(0, toasts.value.length)
   }
 }, { deep: true })
 </script>

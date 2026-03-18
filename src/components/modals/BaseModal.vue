@@ -1,49 +1,51 @@
 <template>
-  <Transition name="modal">
-    <div v-if="modelValue" class="fixed z-50 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-      <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        
-        <!-- Background Overlay -->
-        <Transition name="overlay">
-          <div v-show="modelValue" class="fixed inset-0 bg-gray-900/60 transition-opacity" @click="closeOnOutside ? $emit('update:modelValue', false) : null" aria-hidden="true"></div>
-        </Transition>
+  <Teleport to="body">
+    <Transition name="modal">
+      <div v-if="modelValue" class="fixed z-[9999] inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
 
-        <!-- Centering trick -->
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+          <!-- Background Overlay -->
+          <Transition name="overlay">
+            <div v-show="modelValue" class="fixed inset-0 bg-gray-900/60 transition-opacity" @click="closeOnOutside ? $emit('update:modelValue', false) : null" aria-hidden="true"></div>
+          </Transition>
 
-        <!-- Modal Panel -->
-        <Transition name="panel">
-          <div v-show="modelValue" :class="[maxWidthClass, 'relative inline-block align-bottom bg-white rounded-xl text-left shadow-2xl transform transition-all sm:my-8 sm:align-middle w-full z-10']">
-            
-            <!-- Header -->
-            <div class="px-6 py-4 border-b border-gray-200/50 flex justify-between items-center">
-              <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                <slot name="title">{{ title }}</slot>
-              </h3>
-              <button v-if="showClose" @click="$emit('update:modelValue', false)" type="button" class="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
-                <span class="sr-only">Close</span>
-                <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+          <!-- Centering trick -->
+          <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+          <!-- Modal Panel -->
+          <Transition name="panel">
+            <div v-show="modelValue" :class="[maxWidthClass, 'relative inline-block align-bottom bg-white rounded-xl text-left shadow-2xl transform transition-all sm:my-8 sm:align-middle w-full z-10']">
+
+              <!-- Header -->
+              <div class="px-6 py-4 border-b border-gray-200/50 flex justify-between items-center">
+                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                  <slot name="title">{{ title }}</slot>
+                </h3>
+                <button v-if="showClose" @click="$emit('update:modelValue', false)" type="button" class="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                  <span class="sr-only">Close</span>
+                  <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Body -->
+              <div class="px-6 pt-5 pb-6 overflow-y-auto max-h-[calc(100vh-12rem)]">
+                <slot></slot>
+              </div>
+
+              <!-- Footer -->
+              <div v-if="$slots.footer" class="bg-gray-50/80 px-4 py-3 border-t border-gray-100 sm:px-6 sm:flex sm:justify-end rounded-b-xl">
+                <slot name="footer"></slot>
+              </div>
+
             </div>
+          </Transition>
 
-            <!-- Body -->
-            <div class="px-6 pt-5 pb-6">
-              <slot></slot>
-            </div>
-
-            <!-- Footer -->
-            <div v-if="$slots.footer" class="bg-gray-50/80 px-4 py-3 border-t border-gray-100 sm:px-6 sm:flex sm:justify-end rounded-b-xl">
-              <slot name="footer"></slot>
-            </div>
-
-          </div>
-        </Transition>
-
+        </div>
       </div>
-    </div>
-  </Transition>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup>
@@ -60,8 +62,8 @@ const props = defineProps({
   },
   maxWidth: {
     type: String,
-    default: 'md', // sm, md, lg, xl, 2xl
-    validator: (value) => ['sm', 'md', 'lg', 'xl', '2xl'].includes(value)
+    default: 'md', // sm, md, lg, xl, 2xl, 3xl, 4xl
+    validator: (value) => ['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl'].includes(value)
   },
   showClose: {
     type: Boolean,
@@ -82,6 +84,8 @@ const maxWidthClass = computed(() => {
     case 'lg': return 'sm:max-w-lg'
     case 'xl': return 'sm:max-w-xl'
     case '2xl': return 'sm:max-w-2xl'
+    case '3xl': return 'sm:max-w-3xl'
+    case '4xl': return 'sm:max-w-4xl'
     default: return 'sm:max-w-md'
   }
 })
