@@ -165,6 +165,7 @@ const staticMenuGroups = [
       { name: 'Orang Tua / Wali', route: '/parents', permission_code: 'parent.view' },
       { name: 'Dokumen Siswa', route: '/student-docs', permission_code: 'student_document.view' },
       { name: 'Riwayat Kelas', route: '/class-history', permission_code: 'class_history.view' },
+      { name: 'Penempatan Kelas', route: '/class-setup', permission_code: 'class_assignment.view' },
       { name: 'Mutasi Siswa', route: '/transfers', permission_code: 'student_transfer.view' },
       { name: 'Kartu Pelajar', route: '/id-cards', permission_code: 'id_card.view' },
     ]
@@ -201,7 +202,6 @@ const staticMenuGroups = [
       { name: 'Jenis Catatan Positif', route: '/positive-point-types', permission_code: 'positive_point_type.view' },
       { name: 'Catatan Positif Siswa', route: '/student-positive-points', permission_code: 'student_positive_point.view' },
       { name: 'Kasus Konseling', route: '/counseling-cases', permission_code: 'counseling_case.view' },
-      { name: 'Sesi Konseling', route: '/counseling-sessions', permission_code: 'counseling_session.view' },
       { name: 'Tindak Lanjut Konseling', route: '/counseling-followups', permission_code: 'counseling_followup.view' },
       { name: 'Rapor Karakter', route: '/character-reports', permission_code: 'character_report.view' },
     ]
@@ -225,6 +225,18 @@ const staticMenuGroups = [
       { name: 'Manajemen Role', route: '/roles', permission_code: 'role.view' },
       { name: 'Hak Akses', route: '/permissions', permission_code: 'permission.view' },
     ]
+  },
+  {
+    id: 'absensi',
+    name: 'Absensi',
+    menus: [
+      { name: 'Master Shift', route: '/attendance/shifts', permission_code: 'attendance.shift.view' },
+      { name: 'Pengaturan Absensi', route: '/attendance/settings', permission_code: 'attendance.setting.view' },
+      { name: 'Monitoring Absensi', route: '/attendance/monitoring', permission_code: 'attendance.monitor.view' },
+      { name: 'Riwayat Absensi', route: '/attendance/history', permission_code: 'attendance.history.view' },
+      { name: 'Laporan Absensi', route: '/attendance/reports', permission_code: 'attendance.report.view' },
+      { name: 'Pengajuan Absensi', route: '/attendance/requests', permission_code: 'attendance.request.view' },
+    ]
   }
 ]
 
@@ -235,7 +247,8 @@ const groupIconMap = {
   'Prestasi & Kegiatan': 'M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z',
   'Disiplin & Konseling': 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.957 11.957 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z',
   'Administrasi': 'M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76',
-  'Sistem': 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z'
+  'Sistem': 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z',
+  'Absensi': 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
 }
 
 const getGroupIcon = (name) => {

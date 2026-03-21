@@ -28,6 +28,7 @@ const routes = [
             { path: 'parents', name: 'Parents', component: () => import('@/views/students/ParentsView.vue') },
             { path: 'student-docs', name: 'StudentDocs', component: () => import('@/views/students/StudentDocsView.vue') },
             { path: 'class-history', name: 'ClassHistory', component: () => import('@/views/students/ClassHistoryView.vue') },
+            { path: 'class-setup', name: 'ClassSetup', component: () => import('@/views/students/ClassSetupView.vue') },
             { path: 'transfers', name: 'Transfers', component: () => import('@/views/students/TransfersView.vue') },
             { path: 'id-cards', name: 'IdCards', component: () => import('@/views/students/IdCardsView.vue') },
             // Akademik
@@ -49,7 +50,12 @@ const routes = [
             { path: 'positive-point-types', name: 'PositivePointTypes', component: () => import('@/views/counseling/PositivePointTypesView.vue') },
             { path: 'student-positive-points', name: 'StudentPositivePoints', component: () => import('@/views/counseling/StudentPositivePointsView.vue') },
             { path: 'counseling-cases', name: 'CounselingCases', component: () => import('@/views/counseling/CounselingCasesView.vue') },
-            { path: 'counseling-sessions', name: 'CounselingSessions', component: () => import('@/views/counseling/CounselingSessionsView.vue') },
+            { path: 'counseling-cases/create', name: 'CounselingCaseCreate', component: () => import('@/views/counseling/CounselingCaseFormView.vue') },
+            { path: 'counseling-cases/:id', name: 'CounselingCaseDetail', component: () => import('@/views/counseling/CounselingCaseDetailView.vue') },
+            { path: 'counseling-cases/:id/edit', name: 'CounselingCaseEdit', component: () => import('@/views/counseling/CounselingCaseFormView.vue') },
+            { path: 'students/:studentId/counseling-history', name: 'StudentCounselingHistory', component: () => import('@/views/counseling/StudentCounselingHistoryView.vue') },
+            { path: 'counseling-cases/:caseId/sessions/create', name: 'CounselingSessionCreate', component: () => import('@/views/counseling/CounselingSessionFormView.vue') },
+            { path: 'counseling-sessions/:id/edit', name: 'CounselingSessionEdit', component: () => import('@/views/counseling/CounselingSessionFormView.vue') },
             { path: 'counseling-followups', name: 'CounselingFollowups', component: () => import('@/views/counseling/CounselingFollowupsView.vue') },
             { path: 'character-reports', name: 'CharacterReports', component: () => import('@/views/students/CharacterReportIndexView.vue') },
 
@@ -62,7 +68,14 @@ const routes = [
             // Sistem
             { path: 'users', name: 'Users', component: () => import('@/views/system/UsersView.vue') },
             { path: 'roles', name: 'Roles', component: () => import('@/views/system/RolesView.vue') },
-            { path: 'permissions', name: 'Permissions', component: () => import('@/views/system/PermissionsView.vue') }
+            { path: 'permissions', name: 'Permissions', component: () => import('@/views/system/PermissionsView.vue') },
+            // Absensi
+            { path: 'attendance/shifts', name: 'AttendanceShifts', component: () => import('@/views/attendance/AttendanceShiftsView.vue') },
+            { path: 'attendance/settings', name: 'AttendanceSettings', component: () => import('@/views/attendance/AttendanceSettingsView.vue') },
+            { path: 'attendance/monitoring', name: 'AttendanceMonitoring', component: () => import('@/views/attendance/AttendanceMonitoringView.vue') },
+            { path: 'attendance/history', name: 'AttendanceHistory', component: () => import('@/views/attendance/AttendanceHistoryView.vue') },
+            { path: 'attendance/reports', name: 'AttendanceReports', component: () => import('@/views/attendance/AttendanceReportsView.vue') },
+            { path: 'attendance/requests', name: 'AttendanceRequests', component: () => import('@/views/attendance/AttendanceRequestsView.vue') }
         ]
     }
 ]

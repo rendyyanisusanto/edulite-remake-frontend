@@ -1,23 +1,27 @@
 import api from '../api';
 
 class StudentClassHistoryService {
-    async getAll(params) {
+    getAll(params) {
         return api.get('/class-histories', { params });
     }
 
-    async getById(id) {
+    getById(id) {
         return api.get(`/class-histories/${id}`);
     }
 
-    async create(data) {
+    getStudentHistory(student_id) {
+        return api.get(`/class-histories/student/${student_id}`);
+    }
+
+    create(data) {
         return api.post('/class-histories', data);
     }
 
-    async update(id, data) {
+    update(id, data) {
         return api.put(`/class-histories/${id}`, data);
     }
 
-    async delete(id) {
+    delete(id) {
         return api.delete(`/class-histories/${id}`);
     }
 }
