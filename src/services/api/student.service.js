@@ -31,6 +31,27 @@ class StudentService {
             responseType: 'blob'
         });
     }
+
+    async downloadTemplate() {
+        return api.get('/students/template', {
+            responseType: 'blob'
+        });
+    }
+
+    async exportExcel(params = {}) {
+        return api.get('/students/export/excel', {
+            params,
+            responseType: 'blob'
+        });
+    }
+
+    async importExcel(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        return api.post('/students/import', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+    }
 }
 
 export default new StudentService()

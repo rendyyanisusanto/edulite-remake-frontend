@@ -13,6 +13,22 @@ const routes = [
         meta: { guest: true }
     },
     {
+        path: '/rfid-gate-scan',
+        alias: ['/rfid-scan'],
+        name: 'RfidScan',
+        component: () => import('@/views/student-rfid/RfidGateScanView.vue')
+    },
+    {
+        path: '/rfid-toilet-scan',
+        name: 'RfidToiletScan',
+        component: () => import('@/views/student-rfid/RfidToiletScanView.vue')
+    },
+    {
+        path: '/kiosk/student-item-deposits',
+        name: 'StudentItemDepositsKiosk',
+        component: () => import('@/views/student-item-deposits/StudentItemDepositsKioskView.vue')
+    },
+    {
         path: '/',
         component: () => import('@/layouts/MainLayout.vue'),
         meta: { requiresAuth: true },
@@ -30,6 +46,20 @@ const routes = [
             { path: 'class-history', name: 'ClassHistory', component: () => import('@/views/students/ClassHistoryView.vue') },
             { path: 'class-setup', name: 'ClassSetup', component: () => import('@/views/students/ClassSetupView.vue') },
             { path: 'transfers', name: 'Transfers', component: () => import('@/views/students/TransfersView.vue') },
+            { path: 'student-item-deposits', name: 'StudentItemDeposits', component: () => import('@/views/student-item-deposits/StudentItemDepositsView.vue') },
+            { path: 'student-item-deposits/monitoring', name: 'StudentItemDepositsMonitoring', component: () => import('@/views/student-item-deposits/StudentItemDepositsMonitoringView.vue') },
+            { path: 'student-item-deposits/reports', name: 'StudentItemReportsIndex', component: () => import('@/views/student-item-deposits/reports/ReportIndexPage.vue') },
+            { path: 'student-item-deposits/reports/active-items', name: 'StudentItemReportsActiveItems', component: () => import('@/views/student-item-deposits/reports/ActiveItemsReportPage.vue') },
+            { path: 'student-item-deposits/reports/daily-loans', name: 'StudentItemReportsDailyLoans', component: () => import('@/views/student-item-deposits/reports/DailyLoansReportPage.vue') },
+            { path: 'student-item-deposits/reports/unreturned-items', name: 'StudentItemReportsUnreturned', component: () => import('@/views/student-item-deposits/reports/UnreturnedItemsReportPage.vue') },
+            { path: 'student-item-deposits/reports/final-returns', name: 'StudentItemReportsFinalReturns', component: () => import('@/views/student-item-deposits/reports/FinalReturnsReportPage.vue') },
+            { path: 'student-item-deposits/reports/problem-items', name: 'StudentItemReportsProblemItems', component: () => import('@/views/student-item-deposits/reports/ProblemItemsReportPage.vue') },
+            { path: 'student-item-deposits/reports/student-behavior', name: 'StudentItemReportsBehavior', component: () => import('@/views/student-item-deposits/reports/StudentBehaviorReportPage.vue') },
+            { path: 'student-item-deposits/reports/class-summary', name: 'StudentItemReportsClassSummary', component: () => import('@/views/student-item-deposits/reports/ClassSummaryReportPage.vue') },
+            { path: 'student-item-deposits/reports/student-history', name: 'StudentItemReportsStudentHistory', component: () => import('@/views/student-item-deposits/reports/StudentHistoryReportPage.vue') },
+            { path: 'student-item-deposits/categories', name: 'StudentItemDepositsCategories', component: () => import('@/views/student-item-deposits/StudentItemDepositsCategoriesView.vue') },
+            { path: 'student-item-deposits/settings', name: 'StudentItemDepositsSettings', component: () => import('@/views/student-item-deposits/StudentItemDepositsSettingsView.vue') },
+            { path: 'student-item-deposits/print/:id', name: 'StudentItemDepositsPrint', component: () => import('@/views/student-item-deposits/StudentItemDepositPrintView.vue') },
             { path: 'id-cards', name: 'IdCards', component: () => import('@/views/students/IdCardsView.vue') },
             // Akademik
             { path: 'academic-years', name: 'AcademicYears', component: () => import('@/views/academic/AcademicYearsView.vue') },
@@ -69,13 +99,39 @@ const routes = [
             { path: 'users', name: 'Users', component: () => import('@/views/system/UsersView.vue') },
             { path: 'roles', name: 'Roles', component: () => import('@/views/system/RolesView.vue') },
             { path: 'permissions', name: 'Permissions', component: () => import('@/views/system/PermissionsView.vue') },
+            { path: 'school-profile', name: 'SchoolProfile', component: () => import('@/views/system/SchoolProfileView.vue') },
+            { path: 'document-settings', name: 'DocumentSettings', component: () => import('@/views/system/DocumentSettingsView.vue') },
+            { path: 'document-settings/create', name: 'DocumentSettingCreate', component: () => import('@/views/system/DocumentSettingFormView.vue') },
+            { path: 'document-settings/:id/edit', name: 'DocumentSettingEdit', component: () => import('@/views/system/DocumentSettingFormView.vue') },
             // Absensi
             { path: 'attendance/shifts', name: 'AttendanceShifts', component: () => import('@/views/attendance/AttendanceShiftsView.vue') },
             { path: 'attendance/settings', name: 'AttendanceSettings', component: () => import('@/views/attendance/AttendanceSettingsView.vue') },
             { path: 'attendance/monitoring', name: 'AttendanceMonitoring', component: () => import('@/views/attendance/AttendanceMonitoringView.vue') },
             { path: 'attendance/history', name: 'AttendanceHistory', component: () => import('@/views/attendance/AttendanceHistoryView.vue') },
             { path: 'attendance/reports', name: 'AttendanceReports', component: () => import('@/views/attendance/AttendanceReportsView.vue') },
-            { path: 'attendance/requests', name: 'AttendanceRequests', component: () => import('@/views/attendance/AttendanceRequestsView.vue') }
+            { path: 'attendance/requests', name: 'AttendanceRequests', component: () => import('@/views/attendance/AttendanceRequestsView.vue') },
+            // RFID Siswa
+            { path: 'student-rfid/master/shifts', name: 'StudentAttendanceShiftMaster', component: () => import('@/views/student-rfid/StudentAttendanceShiftMasterView.vue') },
+            { path: 'student-rfid/master/shift-classes', name: 'StudentAttendanceShiftClassMapping', component: () => import('@/views/student-rfid/StudentAttendanceShiftClassMappingView.vue') },
+            { path: 'student-rfid/master/shift-students', name: 'StudentAttendanceShiftStudentOverride', component: () => import('@/views/student-rfid/StudentAttendanceShiftStudentOverrideView.vue') },
+            { path: 'student-rfid/master/rfid-mapping', name: 'StudentRfidMapping', component: () => import('@/views/student-rfid/StudentRfidMappingView.vue') },
+            { path: 'student-rfid/attendance/monitoring', name: 'StudentAttendanceGateMonitoring', component: () => import('@/views/student-rfid/StudentAttendanceGateMonitoringView.vue') },
+            { path: 'student-rfid/attendance/daily', name: 'StudentAttendanceDaily', component: () => import('@/views/student-rfid/StudentAttendanceDailyView.vue') },
+            { path: 'student-rfid/attendance/corrections', name: 'StudentAttendanceCorrections', component: () => import('@/views/student-rfid/StudentAttendanceCorrectionView.vue') },
+            { path: 'student-rfid/toilet/monitoring', name: 'StudentToiletMonitoring', component: () => import('@/views/student-rfid/StudentToiletMonitoringView.vue') },
+            { path: 'student-rfid/toilet/history', name: 'StudentToiletHistory', component: () => import('@/views/student-rfid/StudentToiletHistoryView.vue') },
+            { path: 'student-rfid/reports/attendance', name: 'StudentAttendanceReport', component: () => import('@/views/student-rfid/StudentAttendanceReportView.vue') },
+            { path: 'student-rfid/reports/toilet', name: 'StudentToiletReport', component: () => import('@/views/student-rfid/StudentToiletReportView.vue') },
+            // Ekstrakurikuler
+            { path: 'extracurricular/master', name: 'ExtracurricularMaster', component: () => import('@/views/extracurricular/ExtracurricularMasterView.vue') },
+            { path: 'extracurricular/coaches', name: 'ExtracurricularCoaches', component: () => import('@/views/extracurricular/ExtracurricularCoachesView.vue') },
+            { path: 'extracurricular/assignments', name: 'ExtracurricularAssignments', component: () => import('@/views/extracurricular/ExtracurricularAssignmentsView.vue') },
+            { path: 'extracurricular/schedules', name: 'ExtracurricularSchedules', component: () => import('@/views/extracurricular/ExtracurricularSchedulesView.vue') },
+            { path: 'extracurricular/members', name: 'ExtracurricularMembers', component: () => import('@/views/extracurricular/ExtracurricularMembersView.vue') },
+            { path: 'extracurricular/sessions', name: 'ExtracurricularSessions', component: () => import('@/views/extracurricular/ExtracurricularSessionsView.vue') },
+            { path: 'extracurricular/attendances', name: 'ExtracurricularAttendances', component: () => import('@/views/extracurricular/ExtracurricularAttendancesView.vue') },
+            { path: 'extracurricular/progress', name: 'ExtracurricularProgress', component: () => import('@/views/extracurricular/ExtracurricularProgressView.vue') },
+            { path: 'extracurricular/reports', name: 'ExtracurricularReports', component: () => import('@/views/extracurricular/ExtracurricularReportsView.vue') }
         ]
     }
 ]

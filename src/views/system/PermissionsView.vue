@@ -34,6 +34,13 @@
           <option value="">Semua Modul</option>
           <option v-for="mod in moduleList" :key="mod" :value="mod">{{ mod }}</option>
         </select>
+        <select v-model="filterPlatform" @change="() => { currentPage = 1; fetchPermissions() }"
+          class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white">
+          <option value="">Semua Platform</option>
+          <option value="WEB">Web App</option>
+          <option value="MOBILE">Mobile App</option>
+          <option value="BOTH">Web + Mobile</option>
+        </select>
       </div>
     </div>
 
@@ -59,6 +66,10 @@
               <div class="flex items-center gap-2">
                 <span class="text-sm font-medium text-gray-800">{{ perm.name }}</span>
                 <span class="text-xs font-mono bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{{ perm.code }}</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                  :class="platformBadgeClass(perm.platform)">
+                  {{ perm.platform || 'BOTH' }}
+                </span>
               </div>
               <p v-if="perm.description" class="text-xs text-gray-400 mt-0.5">{{ perm.description }}</p>
             </div>
@@ -94,6 +105,7 @@
           <tr>
             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Code</th>
             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Platform</th>
             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Deskripsi</th>
             <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
           </tr>
@@ -104,6 +116,11 @@
               <span class="text-xs font-mono bg-gray-100 text-gray-700 px-2 py-1 rounded">{{ perm.code }}</span>
             </td>
             <td class="px-6 py-3 text-sm text-gray-800">{{ perm.name }}</td>
+            <td class="px-6 py-3">
+              <span class="text-xs px-2 py-1 rounded-full font-semibold" :class="platformBadgeClass(perm.platform)">
+                {{ perm.platform || 'BOTH' }}
+              </span>
+            </td>
             <td class="px-6 py-3 text-sm text-gray-500">{{ perm.description || '-' }}</td>
             <td class="px-6 py-3 text-right">
               <button v-if="authStore.hasPermission('permission.update')"
@@ -175,6 +192,15 @@
               class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
             ></textarea>
           </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Platform <span class="text-red-500">*</span></label>
+            <select v-model="form.platform"
+              class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white">
+              <option value="WEB">Web App</option>
+              <option value="MOBILE">Mobile App</option>
+              <option value="BOTH">Web + Mobile</option>
+            </select>
+          </div>
           <div class="flex gap-3 pt-2">
             <button type="button" @click="closeFormModal"
               class="flex-1 px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
@@ -213,6 +239,7 @@ const totalPages = ref(1)
 const currentPage = ref(1)
 const search = ref('')
 const filterModule = ref('')
+const filterPlatform = ref('')
 const viewMode = ref('grouped')
 let debounceTimer = null
 
@@ -220,7 +247,7 @@ let debounceTimer = null
 const showFormModal = ref(false)
 const editingPerm = ref(null)
 const formLoading = ref(false)
-const form = reactive({ code: '', name: '', description: '' })
+const form = reactive({ code: '', name: '', description: '', platform: 'WEB' })
 const formErrors = reactive({ code: '', name: '' })
 
 // ── Computed ───────────────────────────────────────────────────────────────
@@ -235,7 +262,12 @@ const fetchPermissions = async () => {
   loading.value = true
   try {
     if (viewMode.value === 'grouped') {
-      const res = await permissionService.getGrouped()
+      const groupedParams = {}
+      if (filterPlatform.value) {
+        groupedParams.platform = filterPlatform.value
+      }
+
+      const res = await permissionService.getGrouped(groupedParams)
       const data = res.data || res
       let groups = Array.isArray(data) ? data : []
       if (search.value) {
@@ -256,6 +288,7 @@ const fetchPermissions = async () => {
         page: currentPage.value,
         search: search.value,
         module: filterModule.value,
+        platform: filterPlatform.value || undefined,
         limit: 20
       })
       const d = res.data || res
@@ -292,6 +325,7 @@ const openCreateModal = () => {
   form.code = ''
   form.name = ''
   form.description = ''
+  form.platform = 'WEB'
   formErrors.code = ''
   formErrors.name = ''
   showFormModal.value = true
@@ -302,6 +336,7 @@ const openEditModal = (perm) => {
   form.code = perm.code
   form.name = perm.name
   form.description = perm.description || ''
+  form.platform = perm.platform || 'BOTH'
   formErrors.code = ''
   formErrors.name = ''
   showFormModal.value = true
@@ -320,10 +355,19 @@ const submitForm = async () => {
   formLoading.value = true
   try {
     if (editingPerm.value) {
-      await permissionService.update(editingPerm.value.id, { name: form.name, description: form.description })
+      await permissionService.update(editingPerm.value.id, {
+        name: form.name,
+        description: form.description,
+        platform: form.platform
+      })
       success('Permission berhasil diperbarui')
     } else {
-      await permissionService.create({ code: form.code, name: form.name, description: form.description })
+      await permissionService.create({
+        code: form.code,
+        name: form.name,
+        description: form.description,
+        platform: form.platform
+      })
       success('Permission berhasil ditambahkan')
     }
     closeFormModal()
@@ -338,4 +382,10 @@ const submitForm = async () => {
 onMounted(async () => {
   await fetchPermissions()
 })
+
+const platformBadgeClass = (platform) => {
+  if (platform === 'WEB') return 'bg-blue-100 text-blue-700'
+  if (platform === 'MOBILE') return 'bg-emerald-100 text-emerald-700'
+  return 'bg-purple-100 text-purple-700'
+}
 </script>

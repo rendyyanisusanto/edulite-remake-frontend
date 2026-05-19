@@ -6,7 +6,7 @@
     
     <div class="relative">
       <!-- Selected State View -->
-      <div v-if="displayLabel && !isSearching" class="relative">
+      <div v-if="displayLabel && !isSearching && !hideSelectedDisplay" class="relative">
         <div class="block w-full rounded-md border-gray-300 px-3 py-2 border bg-white flex justify-between items-center cursor-pointer transition-colors hover:border-primary"
              :class="error ? 'border-red-300' : 'border-gray-300'"
              @click="enableSearch">
@@ -100,6 +100,10 @@ const props = defineProps({
     type: String,
     default: ''
   },
+  hideSelectedDisplay: {
+    type: Boolean,
+    default: false
+  },
   fetchOptions: {
     type: Function,
     required: true // (query) => Promise<Array<{value: any, label: string, description?: string}>>
@@ -131,7 +135,7 @@ onMounted(() => {
     isSearching.value = true
     loadOptions('')
   } else {
-    isSearching.value = false
+    isSearching.value = props.hideSelectedDisplay
   }
 })
 
@@ -147,7 +151,7 @@ watch(() => props.modelValue, (newVal) => {
   if (!newVal) {
     clearSelection()
   } else {
-    isSearching.value = false
+    isSearching.value = props.hideSelectedDisplay
   }
 })
 
@@ -156,7 +160,7 @@ const closeDropdown = () => {
   if (!props.modelValue) {
     searchQuery.value = ''
   } else {
-    isSearching.value = false
+    isSearching.value = props.hideSelectedDisplay
   }
 }
 
@@ -192,9 +196,9 @@ const loadOptions = async (query) => {
 }
 
 const selectItem = (option) => {
-  displayLabel.value = option.label
+  displayLabel.value = props.hideSelectedDisplay ? '' : option.label
   searchQuery.value = ''
-  isSearching.value = false
+  isSearching.value = props.hideSelectedDisplay
   isOpen.value = false
   
   emit('update:modelValue', option.value)

@@ -38,6 +38,13 @@ class TeacherService {
     getById(id) { return api.get(`/academic/teachers/${id}`) }
     create(data) { return api.post('/academic/teachers', data) }
     update(id, data) { return api.put(`/academic/teachers/${id}`, data) }
+    uploadPhoto(id, file) {
+        const formData = new FormData()
+        formData.append('photo', file)
+        return api.post(`/academic/teachers/${id}/photo`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        })
+    }
     delete(id) { return api.delete(`/academic/teachers/${id}`) }
 }
 

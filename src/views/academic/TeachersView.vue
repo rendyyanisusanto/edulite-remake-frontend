@@ -22,6 +22,18 @@
       :sortBy="sortBy"
       :sortDesc="sortDesc"
     >
+      <template #cell-full_name="{ item }">
+        <div class="flex items-center space-x-3">
+          <div class="h-10 w-10 flex-shrink-0">
+            <img v-if="item.photo" :src="item.photo" alt="" class="h-10 w-10 rounded-full object-cover border border-gray-200" />
+            <div v-else class="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
+              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            </div>
+          </div>
+          <div class="text-sm font-medium text-gray-900">{{ item.full_name }}</div>
+        </div>
+      </template>
+
       <template #cell-user="{ item }">
         <span v-if="item.user" class="text-green-600 flex items-center text-xs font-semibold">
            <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Terhubung
@@ -56,6 +68,21 @@
           <BaseInput id="full_name" v-model="form.full_name" label="Nama Lengkap" placeholder="Contoh: Budi Santoso, S.Pd" required />
           <BaseInput id="nip" v-model="form.nip" label="NIP / NUPTK" placeholder="NIP/NUPTK Guru" />
           
+          <div class="sm:col-span-2 flex justify-center py-2">
+            <div class="w-40">
+              <AssetUpload 
+                label="Foto Guru" 
+                :current-url="form.photo" 
+                :uploading="uploadingPhoto" 
+                :disabled="!isEditing"
+                @upload="handleUpload"
+              />
+              <p v-if="!isEditing" class="text-[10px] text-gray-400 text-center mt-1 italic">
+                Simpan data guru terlebih dahulu untuk mengupload foto.
+              </p>
+            </div>
+          </div>
+
           <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Kelamin</label>
             <select v-model="form.gender" class="block w-full rounded-md border-gray-300 px-3 py-2 border bg-white/50">
@@ -109,6 +136,7 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseTable from '@/components/tables/BaseTable.vue'
 import BaseModal from '@/components/modals/BaseModal.vue'
 import BaseInput from '@/components/forms/BaseInput.vue'
+import AssetUpload from '@/components/school-profile/AssetUpload.vue'
 import { teacherService } from '@/services/api/academic.service'
 import { useToast } from '@/composables/useToast'
 
@@ -129,8 +157,9 @@ const isEditing = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
 const currentItem = ref(null)
+const uploadingPhoto = ref(false)
 
-const defaultForm = { nip: '', full_name: '', gender: 'L', phone: '', email: '', password: '' }
+const defaultForm = { nip: '', full_name: '', gender: 'L', phone: '', email: '', password: '', photo: '' }
 const form = reactive({ ...defaultForm })
 
 const columns = [
@@ -197,6 +226,23 @@ const deleteData = async () => {
     fetchData()
   } catch (err) { showError('Gagal menghapus') }
   finally { deleting.value = false }
+}
+
+const handleUpload = async (file) => {
+  if (!currentItem.value?.id) return
+  uploadingPhoto.value = true
+  try {
+    const response = await teacherService.uploadPhoto(currentItem.value.id, file)
+    if (response.success) {
+      form.photo = response.data.url
+      success('Foto berhasil diperbarui')
+      fetchData() // Refresh table to show new photo
+    }
+  } catch (err) {
+    showError(err.response?.data?.message || 'Gagal mengupload foto')
+  } finally {
+    uploadingPhoto.value = false
+  }
 }
 
 onMounted(() => fetchData())

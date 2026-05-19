@@ -4,8 +4,8 @@ const permissionService = {
     getAll(params = {}) {
         return api.get('/permissions', { params })
     },
-    getGrouped() {
-        return api.get('/permissions/grouped')
+    getGrouped(params = {}) {
+        return api.get('/permissions/grouped', { params })
     },
     getById(id) {
         return api.get(`/permissions/${id}`)

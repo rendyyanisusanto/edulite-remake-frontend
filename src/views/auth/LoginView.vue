@@ -14,11 +14,11 @@
       <div class="glass py-8 px-4 sm:rounded-lg sm:px-10">
         <form class="space-y-6" @submit.prevent="handleLogin">
           <div>
-            <label for="email" class="block text-sm font-medium text-gray-700">
-              Email address
+            <label for="username" class="block text-sm font-medium text-gray-700">
+              Username
             </label>
             <div class="mt-1">
-              <input id="email" name="email" type="email" autocomplete="email" required v-model="email"
+              <input id="username" name="username" type="text" autocomplete="username" required v-model="username"
                      class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
             </div>
           </div>
@@ -68,23 +68,23 @@ const router = useRouter()
 const authStore = useAuthStore()
 const { success, error } = useToast()
 
-const email = ref('')
+const username = ref('')
 const password = ref('')
 const loading = ref(false)
 
 const handleLogin = async () => {
-    if (!email.value || !password.value) return
+    if (!username.value || !password.value) return
 
     loading.value = true
     try {
-        const response = await authService.login(email.value, password.value)
+        const response = await authService.login(username.value, password.value)
         // response = { success, data: { access_token, user, roles, permissions } }
         const loginData = response.data || response
         authStore.login(loginData)
         success('Login berhasil! Selamat datang.')
         router.push('/dashboard')
     } catch (err) {
-        error(err.message || 'Login gagal. Periksa kembali email dan password Anda.')
+        error(err.message || 'Login gagal. Periksa kembali username dan password Anda.')
     } finally {
         loading.value = false
     }

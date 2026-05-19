@@ -237,6 +237,37 @@ const staticMenuGroups = [
       { name: 'Laporan Absensi', route: '/attendance/reports', permission_code: 'attendance.report.view' },
       { name: 'Pengajuan Absensi', route: '/attendance/requests', permission_code: 'attendance.request.view' },
     ]
+  },
+  {
+    id: 'rfid-siswa',
+    name: 'RFID Siswa',
+    menus: [
+      { name: 'Master Shift RFID Siswa', route: '/student-rfid/master/shifts' },
+      { name: 'Mapping Shift per Kelas', route: '/student-rfid/master/shift-classes' },
+      { name: 'Override Shift per Siswa', route: '/student-rfid/master/shift-students' },
+      { name: 'Mapping RFID Siswa', route: '/student-rfid/master/rfid-mapping' },
+      { name: 'Monitoring Scan Gerbang Hari Ini', route: '/student-rfid/attendance/monitoring' },
+      { name: 'Presensi Harian Siswa', route: '/student-rfid/attendance/daily' },
+      { name: 'Koreksi Presensi Siswa', route: '/student-rfid/attendance/corrections' },
+      { name: 'Monitoring Toilet Hari Ini', route: '/student-rfid/toilet/monitoring' },
+      { name: 'Histori Toilet Siswa', route: '/student-rfid/toilet/history' },
+      { name: 'Laporan Presensi Siswa', route: '/student-rfid/reports/attendance' },
+      { name: 'Laporan Toilet Siswa', route: '/student-rfid/reports/toilet' },
+    ]
+  },
+  {
+    id: 'ekstrakurikuler',
+    name: 'Ekstrakurikuler',
+    menus: [
+      { name: 'Master Ekskul', route: '/extracurricular/master', permission_code: 'extracurricular.view' },
+      { name: 'Pelatih Ekskul', route: '/extracurricular/coaches', permission_code: 'extracurricular.manage_trainer' },
+      { name: 'Jadwal Ekskul', route: '/extracurricular/schedules', permission_code: 'extracurricular.manage_schedule' },
+      { name: 'Anggota Ekskul', route: '/extracurricular/members', permission_code: 'extracurricular.member.view' },
+      { name: 'Sesi Ekskul', route: '/extracurricular/sessions', permission_code: 'extracurricular.session.view' },
+      { name: 'Presensi Ekskul', route: '/extracurricular/attendances', permission_code: 'extracurricular.student_attendance.view' },
+      { name: 'Perkembangan Ekskul', route: '/extracurricular/progress', permission_code: 'extracurricular.progress.view' },
+      { name: 'Laporan Ekskul', route: '/extracurricular/reports', permission_code: 'extracurricular.report.view' },
+    ]
   }
 ]
 
@@ -249,6 +280,9 @@ const groupIconMap = {
   'Administrasi': 'M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76',
   'Sistem': 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z',
   'Absensi': 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
+  ,
+  'RFID Siswa': 'M12 11c0-3.866 3.134-7 7-7m-14 0c3.866 0 7 3.134 7 7m-9 5a9 9 0 0018 0',
+  'Ekstrakurikuler': 'M12 2l2.39 7.26H22l-6.19 4.5L18.2 21 12 16.77 5.8 21l2.39-7.24L2 9.26h7.61L12 2z'
 }
 
 const getGroupIcon = (name) => {

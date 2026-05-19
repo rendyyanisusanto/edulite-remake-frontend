@@ -78,7 +78,7 @@
           </button>
           <button v-if="item.status === 'DRAFT'" @click="openEditModal(item)" title="Edit" class="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
           <button v-if="item.status === 'DRAFT'" @click="confirmAction('submit', item)" title="Ajukan" class="p-1.5 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg></button>
-          <button v-if="item.status === 'PENDING'" @click="confirmAction('approve', item)" title="Setujui" class="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></button>
+          <button v-if="item.status === 'PENDING'" @click="openApproveModal(item)" title="Setujui & Edit" class="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></button>
           <button v-if="item.status === 'PENDING'" @click="confirmAction('reject', item)" title="Tolak" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
           <button v-if="['DRAFT','PENDING','APPROVED'].includes(item.status)" @click="confirmAction('cancel', item)" title="Batalkan" class="p-1.5 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg></button>
           <button v-if="item.status === 'DRAFT'" @click="confirmDelete(item)" title="Hapus" class="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
@@ -278,7 +278,7 @@
           <!-- Status actions -->
           <BaseButton v-if="currentItem?.status === 'DRAFT'" variant="secondary" @click="openEditFromDetail">Edit</BaseButton>
           <BaseButton v-if="currentItem?.status === 'DRAFT'" @click="confirmActionFromDetail('submit')" customClass="bg-yellow-500 hover:bg-yellow-600 border-yellow-500 text-white">Ajukan</BaseButton>
-          <BaseButton v-if="currentItem?.status === 'PENDING'" @click="confirmActionFromDetail('approve')">Setujui</BaseButton>
+          <BaseButton v-if="currentItem?.status === 'PENDING'" @click="openApproveModal(currentItem); showDetailModal = false">Setujui & Edit</BaseButton>
           <BaseButton v-if="currentItem?.status === 'PENDING'" variant="danger" @click="confirmActionFromDetail('reject')">Tolak</BaseButton>
         </div>
       </template>
@@ -293,7 +293,69 @@
       </template>
     </BaseModal>
 
-    <!-- MODAL DELETE -->
+    <!-- MODAL APPROVE + EDIT -->
+    <BaseModal v-model="showApproveModal" title="Setujui Surat Izin" maxWidth="3xl">
+      <div class="mb-4 flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+        <svg class="h-5 w-5 text-amber-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <p class="text-sm text-amber-700">Periksa dan lengkapi data surat (termasuk kode) sebelum menyetujui. Klik <strong>Setujui & Simpan</strong> untuk menyetujui sekaligus.</p>
+      </div>
+      <form @submit.prevent class="space-y-5">
+        <div>
+          <h3 class="text-sm font-semibold text-gray-700 mb-3 pb-1 border-b border-gray-100">Informasi Surat</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Kode Surat</label>
+              <div class="flex gap-2">
+                <input id="af_code" v-model="form.code" placeholder="Otomatis jika dikosongkan" class="block w-full rounded-md border border-gray-300 px-3 py-2 bg-white/50 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                <button type="button" @click="generateCodeHandler" :disabled="generatingCode" title="Generate kode surat otomatis" class="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-blue-300 bg-blue-50 text-blue-700 text-xs font-semibold hover:bg-blue-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap">
+                  <svg v-if="generatingCode" class="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>
+                  <svg v-else class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                  {{ generatingCode ? 'Generating...' : 'Generate' }}
+                </button>
+              </div>
+              <p class="text-xs text-gray-400 mt-1">Format: 001/104.26/SPm/SMK.IT/III/2026</p>
+            </div>
+            <BaseInput id="af_activity" v-model="form.activity_name" label="Nama Kegiatan" placeholder="Nama kegiatan" required />
+            <div class="sm:col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Tujuan Kegiatan</label><textarea v-model="form.purpose" rows="2" placeholder="Jelaskan tujuan kegiatan" class="block w-full rounded-md border-gray-300 px-3 py-2 border bg-white/50 text-sm"></textarea></div>
+            <BaseInput id="af_location" v-model="form.location" label="Tempat / Lokasi" placeholder="Lokasi kegiatan" class="sm:col-span-2" />
+          </div>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold text-gray-700 mb-3 pb-1 border-b border-gray-100">Waktu Kegiatan</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <BaseInput id="af_start_date" v-model="form.start_date" type="date" label="Tanggal Mulai" required />
+            <BaseInput id="af_end_date" v-model="form.end_date" type="date" label="Tanggal Selesai" />
+            <BaseInput id="af_start_time" v-model="form.start_time" type="time" label="Waktu Mulai" />
+            <BaseInput id="af_end_time" v-model="form.end_time" type="time" label="Waktu Selesai" />
+          </div>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold text-gray-700 mb-3 pb-1 border-b border-gray-100">Guru Pendamping</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <BaseSearchSelect v-model="form.teacher_id" label="Guru Pendamping" placeholder="Ketik nama guru untuk mencari..." :initialLabel="teacherSearchLabel" :fetchOptions="fetchTeacherOptions" @change="onTeacherChange" />
+            <BaseInput id="af_companion" v-model="form.companion_name" label="Nama Pendamping" placeholder="Otomatis dari guru atau isi manual" />
+          </div>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold text-gray-700 mb-3 pb-1 border-b border-gray-100">Siswa Peserta <span class="ml-2 text-xs font-normal text-gray-400">(wajib minimal 1)</span></h3>
+          <div class="relative mb-3">
+            <div class="relative"><input v-model="studentSearchQuery" @input="onStudentSearchInput" @focus="showStudentDropdown = true" @blur="onStudentBlur" placeholder="Cari siswa berdasarkan nama atau NIS..." class="block w-full rounded-md border-gray-300 px-3 py-2 pl-9 border bg-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" /><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><svg v-if="searchingStudents" class="animate-spin h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><svg v-else class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg></div></div>
+            <div v-if="showStudentDropdown && studentSearchResults.length > 0" class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto"><div v-for="s in studentSearchResults" :key="s.id" @mousedown.prevent="addStudent(s)" class="flex items-center justify-between px-3 py-2.5 hover:bg-blue-50 cursor-pointer border-b border-gray-50 last:border-0"><div><p class="text-sm font-medium text-gray-800">{{ s.full_name }}</p><p class="text-xs text-gray-400">NIS: {{ s.nis || '-' }}</p></div><span v-if="isStudentSelected(s.id)" class="text-xs text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-full">Dipilih</span><span v-else class="text-xs text-blue-600 font-medium">+ Tambah</span></div></div>
+          </div>
+          <div class="min-h-[60px] rounded-lg border border-dashed border-gray-200 bg-gray-50 p-3"><div v-if="selectedStudents.length === 0" class="flex items-center justify-center h-10 text-sm text-gray-400">Belum ada siswa dipilih.</div><div v-else class="space-y-1.5"><div v-for="(s, idx) in selectedStudents" :key="s.id" class="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-gray-100 shadow-sm"><div class="flex items-center gap-2"><span class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center flex-shrink-0">{{ idx + 1 }}</span><div><p class="text-sm font-medium text-gray-800">{{ s.full_name }}</p><p class="text-xs text-gray-400">NIS: {{ s.nis || '-' }}</p></div></div><button type="button" @click="removeStudent(s.id)" class="text-gray-300 hover:text-red-500 transition-colors p-1 rounded"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button></div></div></div>
+          <p class="text-xs text-gray-500 mt-1.5"><span class="font-semibold text-blue-600">{{ selectedStudents.length }}</span> siswa dipilih</p>
+        </div>
+        <div><label class="block text-sm font-medium text-gray-700 mb-1">Catatan</label><textarea v-model="form.notes" rows="2" placeholder="Catatan tambahan (opsional)" class="block w-full rounded-md border-gray-300 px-3 py-2 border bg-white/50 text-sm"></textarea></div>
+      </form>
+      <template #footer>
+        <BaseButton variant="outline" @click="showApproveModal = false" class="mr-auto">Batal</BaseButton>
+        <BaseButton variant="outline" @click="saveData" :loading="saving" class="mr-2">Simpan Perubahan Saja</BaseButton>
+        <BaseButton @click="doApproveAndSave" :loading="saving" customClass="bg-green-600 hover:bg-green-700 border-green-600 text-white">
+          <svg class="h-4 w-4 mr-1.5 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          Setujui & Simpan
+        </BaseButton>
+      </template>
+    </BaseModal>
     <BaseModal v-model="showDeleteModal" title="Konfirmasi Hapus" maxWidth="sm">
       <p class="text-sm text-gray-600 text-center py-2">Hapus surat izin <b>{{ currentItem?.code }}</b>? Data yang dihapus tidak dapat dikembalikan.</p>
       <template #footer>
@@ -361,6 +423,7 @@ const showFormModal = ref(false)
 const showDetailModal = ref(false)
 const showActionModal = ref(false)
 const showDeleteModal = ref(false)
+const showApproveModal = ref(false)
 const isEditing = ref(false)
 const saving = ref(false)
 const generatingCode = ref(false)
@@ -480,31 +543,50 @@ function openCreateModal() {
   showFormModal.value = true
 }
 
-function openEditModal(item) {
+async function openEditModal(item) {
   isEditing.value = true
   currentItem.value = item
-  teacherSearchLabel.value = item.teacher?.full_name || item.companion_name || ''
-  Object.assign(form, {
-    code: item.code || '',
-    activity_name: item.activity_name || '',
-    purpose: item.purpose || '',
-    location: item.location || '',
-    start_date: item.start_date || '',
-    end_date: item.end_date || '',
-    start_time: item.start_time || '',
-    end_time: item.end_time || '',
-    teacher_id: item.teacher_id || '',
-    companion_name: item.companion_name || '',
-    notes: item.notes || ''
-  })
-  // Load students from item
-  selectedStudents.value = (item.students || []).map(ps => ps.student || { id: ps.student_id })
+  try {
+    // Always fetch full item so nested student data (full_name, nis) is available
+    const res = await permissionLetterService.getById(item.id)
+    const fullItem = res.data
+    currentItem.value = fullItem
+    teacherSearchLabel.value = fullItem.teacher?.full_name || fullItem.companion_name || ''
+    Object.assign(form, {
+      code: fullItem.code || '',
+      activity_name: fullItem.activity_name || '',
+      purpose: fullItem.purpose || '',
+      location: fullItem.location || '',
+      start_date: fullItem.start_date || '',
+      end_date: fullItem.end_date || '',
+      start_time: fullItem.start_time || '',
+      end_time: fullItem.end_time || '',
+      teacher_id: fullItem.teacher_id || '',
+      companion_name: fullItem.companion_name || '',
+      notes: fullItem.notes || ''
+    })
+    // Map nested student records – fullItem.students[].student has full_name & nis
+    selectedStudents.value = (fullItem.students || []).map(ps => ({
+      id: ps.student?.id || ps.student_id,
+      full_name: ps.student?.full_name || '',
+      nis: ps.student?.nis || ''
+    }))
+  } catch (e) {
+    showError('Gagal memuat data surat izin')
+  }
   showFormModal.value = true
 }
 
 function openEditFromDetail() {
   showDetailModal.value = false
   openEditModal(currentItem.value)
+}
+
+async function openApproveModal(item) {
+  // Reuse the same edit form state, we just show a different modal
+  await openEditModal(item)
+  showFormModal.value = false // don't open the regular form modal
+  showApproveModal.value = true
 }
 
 async function saveData() {
@@ -526,6 +608,7 @@ async function saveData() {
       success('Surat izin berhasil dibuat')
     }
     showFormModal.value = false
+    showApproveModal.value = false
     fetchData()
   } catch (e) {
     showError(e?.response?.data?.message || 'Gagal menyimpan data')
@@ -635,6 +718,32 @@ async function doAction() {
 function confirmDelete(item) {
   currentItem.value = item
   showDeleteModal.value = true
+}
+
+async function doApproveAndSave() {
+  // First validate same as saveData
+  if (!form.activity_name) { showError('Nama kegiatan wajib diisi'); return }
+  if (!form.start_date) { showError('Tanggal mulai wajib diisi'); return }
+  if (selectedStudents.value.length === 0) { showError('Minimal 1 siswa harus dipilih'); return }
+
+  saving.value = true
+  try {
+    const payload = {
+      ...form,
+      students: selectedStudents.value.map(s => ({ student_id: s.id }))
+    }
+    // Step 1: save the latest edits
+    await permissionLetterService.update(currentItem.value.id, payload)
+    // Step 2: approve
+    await permissionLetterService.approve(currentItem.value.id)
+    success('Surat izin berhasil diperbarui dan disetujui')
+    showApproveModal.value = false
+    fetchData()
+  } catch (e) {
+    showError(e?.response?.data?.message || 'Gagal menyimpan atau menyetujui')
+  } finally {
+    saving.value = false
+  }
 }
 
 async function doDelete() {

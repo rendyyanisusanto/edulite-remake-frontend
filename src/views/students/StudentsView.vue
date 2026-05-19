@@ -7,7 +7,7 @@
         <BaseButton @click="downloadTemplate" variant="ghost" class="text-gray-500 hover:text-gray-800" icon="<svg class='h-5 w-5 mr-1' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12'/></svg>">
           Template
         </BaseButton>
-        <BaseButton @click="$refs.fileInput.click()" :loading="importing" variant="outline" icon="<svg class='h-5 w-5 mr-1' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12'/></svg>">
+        <BaseButton @click="openFilePicker" :loading="importing" variant="outline" icon="<svg class='h-5 w-5 mr-1' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12'/></svg>">
           Import Excel
         </BaseButton>
         <BaseButton @click="exportExcel" :loading="exporting" variant="secondary" icon="<svg class='h-5 w-5 mr-1' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4'/></svg>">
@@ -19,13 +19,12 @@
       </div>
     </div>
 
-    <!-- Data Table -->
-    <BaseTable 
-      :columns="columns" 
-      :data="students" 
-      :loading="loading" 
-      :total="total" 
-      :currentPage="currentPage" 
+    <BaseTable
+      :columns="columns"
+      :data="students"
+      :loading="loading"
+      :total="total"
+      :currentPage="currentPage"
       :perPage="limit"
       :searchQuery="search"
       @update:searchQuery="handleSearch"
@@ -34,9 +33,11 @@
       :sortBy="sortBy"
       :sortDesc="sortDesc"
     >
-      <!-- Action Buttons Slot -->
       <template #cell-actions="{ item }">
         <div class="flex items-center space-x-2 justify-end">
+          <button @click="openDetailModal(item)" class="text-indigo-600 hover:text-indigo-900 mx-1 tooltip" title="Lihat Detail">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+          </button>
           <router-link :to="`/students/${item.id}/character-report`" class="text-green-600 hover:text-green-900 mx-1 tooltip" title="Rapor Karakter">
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
           </router-link>
@@ -50,30 +51,97 @@
       </template>
     </BaseTable>
 
-    <!-- Create/Edit Modal Form -->
-    <BaseModal v-model="showModal" :title="isEditing ? 'Edit Data Siswa' : 'Tambah Siswa Baru'" maxWidth="2xl">
-      <form @submit.prevent="saveStudent" class="space-y-4">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <BaseInput id="nis" v-model="form.nis" label="NIS" placeholder="Nomor Induk Siswa" required />
-          <BaseInput id="nisn" v-model="form.nisn" label="NISN" placeholder="Nomor Induk Siswa Nasional" />
-          <BaseInput id="full_name" v-model="form.full_name" label="Nama Lengkap" placeholder="Nama Lengkap Siswa" required class="sm:col-span-2" />
-          
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Kelamin <span class="text-red-500">*</span></label>
-            <select v-model="form.gender" class="block w-full rounded-md border-gray-300 focus:border-primary focus:ring-primary sm:text-sm px-3 py-2 border bg-white/50" required>
-              <option value="" disabled>Pilih Jenis Kelamin</option>
-              <option value="L">Laki-Laki</option>
-              <option value="P">Perempuan</option>
-            </select>
+    <BaseModal v-model="showModal" :title="isEditing ? 'Edit Data Siswa' : 'Tambah Siswa Baru'" maxWidth="4xl">
+      <div v-if="loadingForm" class="py-10 text-center text-sm text-gray-500">Memuat data siswa...</div>
+
+      <form v-else @submit.prevent="saveStudent" class="space-y-6">
+        <section class="space-y-4">
+          <h3 class="text-sm font-semibold text-gray-800 uppercase tracking-wide">Data Siswa</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <BaseInput id="nis" v-model="form.nis" label="NIS" placeholder="Nomor Induk Siswa" required />
+            <BaseInput id="nisn" v-model="form.nisn" label="NISN" placeholder="Nomor Induk Siswa Nasional" />
+            <BaseInput id="full_name" v-model="form.full_name" label="Nama Lengkap" placeholder="Nama Lengkap Siswa" required class="sm:col-span-2" />
+
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Kelamin <span class="text-red-500">*</span></label>
+              <select v-model="form.gender" class="block w-full rounded-md border-gray-300 focus:border-primary focus:ring-primary sm:text-sm px-3 py-2 border bg-white/50" required>
+                <option value="" disabled>Pilih Jenis Kelamin</option>
+                <option value="L">Laki-Laki</option>
+                <option value="P">Perempuan</option>
+              </select>
+            </div>
+
+            <BaseInput id="date_of_birth" v-model="form.date_of_birth" type="date" label="Tanggal Lahir" required />
+
+            <div class="mb-4 sm:col-span-2">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Alamat Lengkap</label>
+              <textarea v-model="form.address" rows="3" class="block w-full rounded-md border-gray-300 focus:border-primary focus:ring-primary sm:text-sm px-3 py-2 border bg-white/50" placeholder="Alamat domisili lengkap"></textarea>
+            </div>
           </div>
-          
-          <BaseInput id="date_of_birth" v-model="form.date_of_birth" type="date" label="Tanggal Lahir" required />
-          
-          <div class="mb-4 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Alamat Lengkap</label>
-            <textarea v-model="form.address" rows="3" class="block w-full rounded-md border-gray-300 focus:border-primary focus:ring-primary sm:text-sm px-3 py-2 border bg-white/50" placeholder="Alamat domisili lengkap"></textarea>
+        </section>
+
+        <section class="space-y-4">
+          <div class="flex items-center justify-between gap-3">
+            <h3 class="text-sm font-semibold text-gray-800 uppercase tracking-wide">Parent Profiles</h3>
+            <BaseButton type="button" variant="outline" @click="addParent">Tambah Parent</BaseButton>
           </div>
-        </div>
+
+          <div v-if="form.parents.length === 0" class="rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-500">
+            Belum ada data parent. Klik "Tambah Parent".
+          </div>
+
+          <div v-for="(parent, parentIndex) in form.parents" :key="parent.local_key" class="rounded-xl border border-gray-200 p-4 space-y-4 bg-gray-50/50">
+            <div class="flex items-center justify-between">
+              <h4 class="text-sm font-semibold text-gray-700">Parent {{ parentIndex + 1 }}</h4>
+              <button type="button" class="text-xs text-red-600 hover:text-red-800" @click="removeParent(parentIndex)">Hapus Parent</button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Tipe</label>
+                <select v-model="parent.type" class="block w-full rounded-md border-gray-300 focus:border-primary focus:ring-primary sm:text-sm px-3 py-2 border bg-white">
+                  <option value="">Pilih Tipe</option>
+                  <option value="AYAH">Ayah</option>
+                  <option value="IBU">Ibu</option>
+                  <option value="WALI">Wali</option>
+                </select>
+              </div>
+              <BaseInput :id="`parent_full_name_${parent.local_key}`" v-model="parent.full_name" label="Nama Lengkap" placeholder="Nama Parent" />
+              <BaseInput :id="`parent_nik_${parent.local_key}`" v-model="parent.nik" label="NIK" placeholder="Nomor NIK" />
+              <BaseInput :id="`parent_phone_${parent.local_key}`" v-model="parent.phone" label="No HP" placeholder="08xxxxxxxxxx" />
+              <BaseInput :id="`parent_email_${parent.local_key}`" v-model="parent.email" label="Email" placeholder="email@contoh.com" />
+              <BaseInput :id="`parent_occupation_${parent.local_key}`" v-model="parent.occupation" label="Pekerjaan" placeholder="Pekerjaan" />
+              <BaseInput :id="`parent_education_${parent.local_key}`" v-model="parent.education" label="Pendidikan" placeholder="Pendidikan Terakhir" />
+              <div class="sm:col-span-2 flex items-center gap-2">
+                <input :id="`parent_guardian_${parent.local_key}`" v-model="parent.is_guardian" type="checkbox" class="rounded border-gray-300 text-primary focus:ring-primary" />
+                <label :for="`parent_guardian_${parent.local_key}`" class="text-sm text-gray-700">Sebagai Wali Utama</label>
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Alamat Parent</label>
+                <textarea v-model="parent.address" rows="2" class="block w-full rounded-md border-gray-300 focus:border-primary focus:ring-primary sm:text-sm px-3 py-2 border bg-white" placeholder="Alamat parent"></textarea>
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <h5 class="text-xs font-semibold text-gray-700 uppercase tracking-wide">Dokumen Parent</h5>
+                <button type="button" class="text-xs text-primary hover:text-primary/80" @click="addParentDocument(parentIndex)">Tambah Dokumen</button>
+              </div>
+
+              <div v-if="parent.documents.length === 0" class="rounded border border-dashed border-gray-300 px-3 py-2 text-xs text-gray-500">
+                Belum ada dokumen parent.
+              </div>
+
+              <div v-for="(doc, docIndex) in parent.documents" :key="doc.local_key" class="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg border border-gray-200 p-3 bg-white">
+                <BaseInput :id="`parent_doc_type_${doc.local_key}`" v-model="doc.document_type" label="Jenis Dokumen" placeholder="Contoh: KTP, KK" />
+                <BaseInput :id="`parent_doc_file_${doc.local_key}`" v-model="doc.document_file" label="File Dokumen" placeholder="URL/path file dokumen" />
+                <div class="sm:col-span-2 text-right">
+                  <button type="button" class="text-xs text-red-600 hover:text-red-800" @click="removeParentDocument(parentIndex, docIndex)">Hapus Dokumen</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </form>
 
       <template #footer>
@@ -82,7 +150,58 @@
       </template>
     </BaseModal>
 
-    <!-- Delete Confirmation Modal -->
+    <BaseModal v-model="showDetailModal" title="Detail Lengkap Siswa" maxWidth="4xl">
+      <div v-if="detailLoading" class="py-10 text-center text-sm text-gray-500">Memuat detail siswa...</div>
+      <div v-else-if="detailStudent" class="space-y-6">
+        <section>
+          <h3 class="text-sm font-semibold text-gray-800 uppercase tracking-wide mb-3">Data Siswa</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+            <div><span class="text-gray-500">NIS:</span> <span class="font-medium text-gray-900">{{ displayValue(detailStudent.nis) }}</span></div>
+            <div><span class="text-gray-500">NISN:</span> <span class="font-medium text-gray-900">{{ displayValue(detailStudent.nisn) }}</span></div>
+            <div><span class="text-gray-500">Nama:</span> <span class="font-medium text-gray-900">{{ displayValue(detailStudent.full_name) }}</span></div>
+            <div><span class="text-gray-500">Gender:</span> <span class="font-medium text-gray-900">{{ detailStudent.gender === 'L' ? 'Laki-Laki' : detailStudent.gender === 'P' ? 'Perempuan' : '-' }}</span></div>
+            <div><span class="text-gray-500">Tanggal Lahir:</span> <span class="font-medium text-gray-900">{{ formatDate(detailStudent.date_of_birth) }}</span></div>
+            <div class="sm:col-span-2"><span class="text-gray-500">Alamat:</span> <span class="font-medium text-gray-900">{{ displayValue(detailStudent.address) }}</span></div>
+          </div>
+        </section>
+
+        <section>
+          <h3 class="text-sm font-semibold text-gray-800 uppercase tracking-wide mb-3">Parent Profiles</h3>
+          <div v-if="!detailStudent.parents || detailStudent.parents.length === 0" class="rounded border border-dashed border-gray-300 p-4 text-sm text-gray-500">
+            Belum ada data parent.
+          </div>
+          <div v-else class="space-y-3">
+            <div v-for="parent in detailStudent.parents" :key="parent.id" class="rounded-lg border border-gray-200 p-4 bg-gray-50/50">
+              <div class="flex items-center justify-between mb-2">
+                <p class="font-semibold text-gray-800">{{ displayValue(parent.full_name) }}</p>
+                <span class="text-xs rounded bg-gray-200 px-2 py-1 text-gray-700">{{ displayValue(parent.type) }}</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm mb-3">
+                <div><span class="text-gray-500">NIK:</span> <span class="font-medium text-gray-900">{{ displayValue(parent.nik) }}</span></div>
+                <div><span class="text-gray-500">No HP:</span> <span class="font-medium text-gray-900">{{ displayValue(parent.phone) }}</span></div>
+                <div><span class="text-gray-500">Email:</span> <span class="font-medium text-gray-900">{{ displayValue(parent.email) }}</span></div>
+                <div><span class="text-gray-500">Wali Utama:</span> <span class="font-medium text-gray-900">{{ parent.is_guardian ? 'Ya' : 'Tidak' }}</span></div>
+                <div><span class="text-gray-500">Pekerjaan:</span> <span class="font-medium text-gray-900">{{ displayValue(parent.occupation) }}</span></div>
+                <div><span class="text-gray-500">Pendidikan:</span> <span class="font-medium text-gray-900">{{ displayValue(parent.education) }}</span></div>
+                <div class="sm:col-span-2"><span class="text-gray-500">Alamat:</span> <span class="font-medium text-gray-900">{{ displayValue(parent.address) }}</span></div>
+              </div>
+
+              <div>
+                <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Dokumen Parent</p>
+                <div v-if="!parent.documents || parent.documents.length === 0" class="text-xs text-gray-500">Belum ada dokumen.</div>
+                <div v-else class="space-y-2">
+                  <div v-for="doc in parent.documents" :key="doc.id" class="text-sm rounded border border-gray-200 bg-white px-3 py-2">
+                    <p><span class="text-gray-500">Jenis:</span> <span class="font-medium text-gray-900">{{ displayValue(doc.document_type) }}</span></p>
+                    <p><span class="text-gray-500">File:</span> <span class="font-medium text-gray-900 break-all">{{ displayValue(doc.document_file) }}</span></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </BaseModal>
+
     <BaseModal v-model="showDeleteModal" title="Konfirmasi Hapus" maxWidth="sm">
       <div class="mt-2 text-center sm:text-left">
         <p class="text-sm text-gray-500">
@@ -94,12 +213,11 @@
         <BaseButton variant="danger" @click="deleteStudent" :loading="deleting">Ya, Hapus</BaseButton>
       </template>
     </BaseModal>
-
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseTable from '@/components/tables/BaseTable.vue'
 import BaseModal from '@/components/modals/BaseModal.vue'
@@ -109,12 +227,10 @@ import { useToast } from '@/composables/useToast'
 
 const { success, error: showError } = useToast()
 
-// State for Export/Import
 const fileInput = ref(null)
 const importing = ref(false)
 const exporting = ref(false)
 
-// Table State
 const students = ref([])
 const loading = ref(false)
 const total = ref(0)
@@ -124,43 +240,153 @@ const search = ref('')
 const sortBy = ref('created_at')
 const sortDesc = ref(true)
 
-// Modal State
 const showModal = ref(false)
 const showDeleteModal = ref(false)
+const showDetailModal = ref(false)
 const isEditing = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
+const loadingForm = ref(false)
+const detailLoading = ref(false)
 const currentStudent = ref(null)
+const detailStudent = ref(null)
 
-// Form State
-const defaultForm = {
+const createParentDocument = () => ({
+  local_key: `doc_${Date.now()}_${Math.random()}`,
+  id: null,
+  document_type: '',
+  document_file: ''
+})
+
+const createParent = () => ({
+  local_key: `parent_${Date.now()}_${Math.random()}`,
+  id: null,
+  type: '',
+  full_name: '',
+  nik: '',
+  phone: '',
+  email: '',
+  occupation: '',
+  education: '',
+  is_guardian: false,
+  address: '',
+  documents: []
+})
+
+const createDefaultForm = () => ({
   nis: '',
   nisn: '',
   full_name: '',
   gender: '',
   date_of_birth: '',
-  address: ''
-}
-const form = reactive({ ...defaultForm })
+  address: '',
+  parents: [createParent()]
+})
 
-// Table Columns
+const form = reactive(createDefaultForm())
+
 const columns = [
   { key: 'nis', label: 'NIS', sortable: true },
   { key: 'nisn', label: 'NISN', sortable: true },
   { key: 'full_name', label: 'Nama Lengkap', sortable: true },
   { key: 'gender', label: 'L/P', sortable: true },
   { key: 'date_of_birth', label: 'Tgl Lahir', sortable: false },
-  { key: 'actions', label: 'Aksi', sortable: false, class: 'w-24 text-right' }
+  { key: 'actions', label: 'Aksi', sortable: false, class: 'w-36 text-right' }
 ]
 
-// Methods
+const resetForm = () => {
+  Object.assign(form, createDefaultForm())
+}
+
+const normalizeParent = (parent = {}) => ({
+  local_key: `parent_${parent.id || Date.now()}_${Math.random()}`,
+  id: parent.id || null,
+  type: parent.type || '',
+  full_name: parent.full_name || '',
+  nik: parent.nik || '',
+  phone: parent.phone || '',
+  email: parent.email || '',
+  occupation: parent.occupation || '',
+  education: parent.education || '',
+  is_guardian: Boolean(parent.is_guardian),
+  address: parent.address || '',
+  documents: Array.isArray(parent.documents)
+    ? parent.documents.map((doc) => ({
+      local_key: `doc_${doc.id || Date.now()}_${Math.random()}`,
+      id: doc.id || null,
+      document_type: doc.document_type || '',
+      document_file: doc.document_file || ''
+    }))
+    : []
+})
+
+const applyStudentToForm = (student = {}) => {
+  Object.assign(form, {
+    nis: student.nis || '',
+    nisn: student.nisn || '',
+    full_name: student.full_name || '',
+    gender: student.gender || '',
+    date_of_birth: student.date_of_birth || '',
+    address: student.address || '',
+    parents: Array.isArray(student.parents) && student.parents.length > 0
+      ? student.parents.map(normalizeParent)
+      : [createParent()]
+  })
+}
+
+const hasDocContent = (doc = {}) => {
+  return ['document_type', 'document_file'].some((field) => String(doc[field] || '').trim() !== '')
+}
+
+const hasParentContent = (parent = {}) => {
+  if (parent.is_guardian) return true
+  if (Array.isArray(parent.documents) && parent.documents.some(hasDocContent)) return true
+
+  const fields = ['type', 'full_name', 'nik', 'phone', 'email', 'occupation', 'education', 'address']
+  return fields.some((field) => String(parent[field] || '').trim() !== '')
+}
+
+const buildPayload = () => {
+  const parents = form.parents
+    .filter(hasParentContent)
+    .map((parent) => ({
+      id: parent.id || undefined,
+      type: parent.type || null,
+      full_name: parent.full_name || null,
+      nik: parent.nik || null,
+      phone: parent.phone || null,
+      email: parent.email || null,
+      occupation: parent.occupation || null,
+      education: parent.education || null,
+      is_guardian: Boolean(parent.is_guardian),
+      address: parent.address || null,
+      documents: (parent.documents || [])
+        .filter(hasDocContent)
+        .map((doc) => ({
+          id: doc.id || undefined,
+          document_type: doc.document_type || null,
+          document_file: doc.document_file || null
+        }))
+    }))
+
+  return {
+    nis: form.nis,
+    nisn: form.nisn,
+    full_name: form.full_name,
+    gender: form.gender,
+    date_of_birth: form.date_of_birth,
+    address: form.address,
+    parents
+  }
+}
+
 const fetchStudents = async () => {
   loading.value = true
   try {
     const params = {
       page: currentPage.value,
       limit: limit.value,
-      search: search.value,
+      search: search.value
     }
     const response = await studentService.getAll(params)
     if (response.success) {
@@ -174,13 +400,11 @@ const fetchStudents = async () => {
   }
 }
 
-// Handlers
 const handlePageChange = (page) => {
   currentPage.value = page
   fetchStudents()
 }
 
-// Debounced search
 let searchTimeout
 const handleSearch = (val) => {
   search.value = val
@@ -201,19 +425,54 @@ const handleSort = (key) => {
   fetchStudents()
 }
 
-// Modal Actions
+const openFilePicker = () => {
+  fileInput.value?.click()
+}
+
 const openCreateModal = () => {
   isEditing.value = false
   currentStudent.value = null
-  Object.assign(form, defaultForm)
+  resetForm()
   showModal.value = true
 }
 
-const openEditModal = (student) => {
+const openEditModal = async (student) => {
   isEditing.value = true
   currentStudent.value = student
-  Object.assign(form, student)
+  resetForm()
   showModal.value = true
+  loadingForm.value = true
+
+  try {
+    const response = await studentService.getById(student.id)
+    if (response.success) {
+      applyStudentToForm(response.data)
+    }
+  } catch (err) {
+    showError(err.message || 'Gagal memuat detail siswa')
+    showModal.value = false
+  } finally {
+    loadingForm.value = false
+  }
+}
+
+const openDetailModal = async (student) => {
+  currentStudent.value = student
+  detailStudent.value = null
+  showDetailModal.value = true
+  detailLoading.value = true
+
+  try {
+    const response = await studentService.getById(student.id)
+    if (response.success) {
+      detailStudent.value = response.data
+    }
+  } catch (err) {
+    showError(err.message || 'Gagal memuat detail siswa')
+    showDetailModal.value = false
+  } finally {
+    detailLoading.value = false
+  }
 }
 
 const confirmDelete = (student) => {
@@ -221,20 +480,40 @@ const confirmDelete = (student) => {
   showDeleteModal.value = true
 }
 
-// API Actions
+const addParent = () => {
+  form.parents.push(createParent())
+}
+
+const removeParent = (parentIndex) => {
+  form.parents.splice(parentIndex, 1)
+  if (form.parents.length === 0) {
+    form.parents.push(createParent())
+  }
+}
+
+const addParentDocument = (parentIndex) => {
+  form.parents[parentIndex].documents.push(createParentDocument())
+}
+
+const removeParentDocument = (parentIndex, docIndex) => {
+  form.parents[parentIndex].documents.splice(docIndex, 1)
+}
+
 const saveStudent = async () => {
   if (!form.nis || !form.full_name || !form.gender) {
-    showError('Harap lengkapi semua field wajib (*) !')
+    showError('Harap lengkapi semua field wajib (*)!')
     return
   }
-  
+
   saving.value = true
   try {
+    const payload = buildPayload()
+
     if (isEditing.value) {
-      await studentService.update(currentStudent.value.id, form)
+      await studentService.update(currentStudent.value.id, payload)
       success('Data siswa berhasil diperbarui')
     } else {
-      await studentService.create(form)
+      await studentService.create(payload)
       success('Siswa baru berhasil ditambahkan')
     }
     showModal.value = false
@@ -252,8 +531,7 @@ const deleteStudent = async () => {
     await studentService.delete(currentStudent.value.id)
     success('Data siswa berhasil dihapus')
     showDeleteModal.value = false
-    
-    // If last item on page, go back one page
+
     if (students.value.length === 1 && currentPage.value > 1) {
       currentPage.value--
     }
@@ -265,7 +543,6 @@ const deleteStudent = async () => {
   }
 }
 
-// Export/Import Actions
 const downloadTemplate = async () => {
   try {
     const response = await studentService.downloadTemplate()
@@ -315,11 +592,19 @@ const handleFileUpload = async (event) => {
     showError(err.message || 'Gagal import data')
   } finally {
     importing.value = false
-    event.target.value = '' // Reset input
+    event.target.value = ''
   }
 }
 
-// Lifecycle
+const displayValue = (value) => {
+  return value ? String(value) : '-'
+}
+
+const formatDate = (value) => {
+  if (!value) return '-'
+  return new Date(value).toLocaleDateString('id-ID')
+}
+
 onMounted(() => {
   fetchStudents()
 })

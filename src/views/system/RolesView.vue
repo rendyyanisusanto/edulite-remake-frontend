@@ -193,9 +193,20 @@
 
         <!-- Permission search -->
         <div class="px-6 py-3 border-b border-gray-100">
-          <input v-model="permSearch" type="text" placeholder="Cari permission..."
-            class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-          />
+          <div class="flex gap-3">
+            <input v-model="permSearch" type="text" placeholder="Cari permission..."
+              class="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+            />
+            <select
+              v-model="permissionAppTarget"
+              @change="loadPermissions"
+              class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white"
+            >
+              <option value="">Semua App</option>
+              <option value="WEB">Web App</option>
+              <option value="MOBILE">Mobile App</option>
+            </select>
+          </div>
         </div>
 
         <!-- Permission groups -->
@@ -234,7 +245,12 @@
                 />
                 <div>
                   <p class="text-sm font-medium text-gray-700">{{ perm.name }}</p>
-                  <p class="text-xs text-gray-400 font-mono">{{ perm.code }}</p>
+                  <div class="flex items-center gap-2">
+                    <p class="text-xs text-gray-400 font-mono">{{ perm.code }}</p>
+                    <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold" :class="platformBadgeClass(perm.platform)">
+                      {{ perm.platform || 'BOTH' }}
+                    </span>
+                  </div>
                 </div>
               </label>
             </div>
@@ -328,6 +344,7 @@ const permLoading = ref(false)
 const permSaving = ref(false)
 const permGroups = ref([])
 const permSearch = ref('')
+const permissionAppTarget = ref('')
 const selectedPermIds = ref(new Set())
 const expandedPermGroups = reactive({})
 
@@ -423,6 +440,7 @@ const openPermissionModal = async (role) => {
   selectedRole.value = role
   selectedPermIds.value = new Set((role.permissions || []).map(p => p.id))
   permSearch.value = ''
+  permissionAppTarget.value = ''
   showPermModal.value = true
   await loadPermissions()
 }
@@ -432,7 +450,11 @@ const closePermModal = () => { showPermModal.value = false }
 const loadPermissions = async () => {
   permLoading.value = true
   try {
-    const res = await permissionService.getGrouped()
+    const params = {}
+    if (permissionAppTarget.value) {
+      params.platform = permissionAppTarget.value
+    }
+    const res = await permissionService.getGrouped(params)
     const groups = res.data || res
     permGroups.value = Array.isArray(groups) ? groups : []
     // Auto-expand all groups
@@ -501,4 +523,10 @@ const executeDelete = async () => {
 }
 
 onMounted(fetchRoles)
+
+const platformBadgeClass = (platform) => {
+  if (platform === 'WEB') return 'bg-blue-100 text-blue-700'
+  if (platform === 'MOBILE') return 'bg-emerald-100 text-emerald-700'
+  return 'bg-purple-100 text-purple-700'
+}
 </script>
