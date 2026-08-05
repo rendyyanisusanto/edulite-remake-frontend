@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="min-h-screen bg-gradient-to-br from-[#0984e3] via-[#1d94ea] to-[#5dade2] text-white p-8">
     <div class="max-w-6xl mx-auto h-full flex flex-col">
       <div class="flex items-center justify-between mb-8">
@@ -237,7 +237,11 @@ const handleRfidInput = () => {
   }, 140)
 }
 
-const getTodayDate = () => new Date().toISOString().slice(0, 10)
+const getTodayDate = () => {
+  const d = new Date()
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
 
 const loadCurrentlyOut = async () => {
   loadingOut.value = true

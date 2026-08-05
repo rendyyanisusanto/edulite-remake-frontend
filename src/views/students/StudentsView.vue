@@ -199,6 +199,31 @@
             </div>
           </div>
         </section>
+        <section class="mt-4 pt-4 border-t border-gray-100">
+          <h3 class="text-sm font-semibold text-gray-800 uppercase tracking-wide mb-3">Dashboard Orang Tua</h3>
+          <div class="rounded-lg border border-gray-200 p-4 bg-gray-50/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex-1">
+              <p class="text-sm text-gray-600 mb-1">Akses real-time aktivitas siswa khusus untuk orang tua (tanpa login).</p>
+              <div class="text-xs font-mono bg-white border border-gray-200 px-2 py-1 rounded inline-block text-gray-500 break-all select-all">
+                {{ getParentDashboardUrl(detailStudent.id) }}
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <BaseButton variant="outline" @click="copyParentDashboardUrl(detailStudent.id)">
+                <template #icon>
+                  <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                </template>
+                Copy Link
+              </BaseButton>
+              <BaseButton @click="openParentDashboardUrl(detailStudent.id)">
+                <template #icon>
+                  <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                </template>
+                Buka
+              </BaseButton>
+            </div>
+          </div>
+        </section>
       </div>
     </BaseModal>
 
@@ -603,6 +628,24 @@ const displayValue = (value) => {
 const formatDate = (value) => {
   if (!value) return '-'
   return new Date(value).toLocaleDateString('id-ID')
+}
+
+const getParentDashboardUrl = (id) => {
+  return `${window.location.origin}/parent/${id}`
+}
+
+const copyParentDashboardUrl = async (id) => {
+  const url = getParentDashboardUrl(id)
+  try {
+    await navigator.clipboard.writeText(url)
+    success('Link dashboard berhasil disalin!')
+  } catch (err) {
+    showError('Gagal menyalin link')
+  }
+}
+
+const openParentDashboardUrl = (id) => {
+  window.open(getParentDashboardUrl(id), '_blank')
 }
 
 onMounted(() => {

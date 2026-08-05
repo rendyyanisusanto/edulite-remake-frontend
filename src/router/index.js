@@ -13,6 +13,12 @@ const routes = [
         meta: { guest: true }
     },
     {
+        path: '/parent/:id',
+        name: 'ParentDashboard',
+        component: () => import('@/views/public/ParentDashboardView.vue'),
+        meta: { public: true }
+    },
+    {
         path: '/rfid-gate-scan',
         alias: ['/rfid-scan'],
         name: 'RfidScan',
@@ -45,6 +51,8 @@ const routes = [
             { path: 'student-docs', name: 'StudentDocs', component: () => import('@/views/students/StudentDocsView.vue') },
             { path: 'class-history', name: 'ClassHistory', component: () => import('@/views/students/ClassHistoryView.vue') },
             { path: 'class-setup', name: 'ClassSetup', component: () => import('@/views/students/ClassSetupView.vue') },
+            { path: 'rombels', name: 'Rombels', component: () => import('@/views/students/RombelView.vue') },
+            { path: 'rombels/:classId', name: 'RombelDetail', component: () => import('@/views/students/RombelDetailView.vue') },
             { path: 'transfers', name: 'Transfers', component: () => import('@/views/students/TransfersView.vue') },
             { path: 'student-item-deposits', name: 'StudentItemDeposits', component: () => import('@/views/student-item-deposits/StudentItemDepositsView.vue') },
             { path: 'student-item-deposits/monitoring', name: 'StudentItemDepositsMonitoring', component: () => import('@/views/student-item-deposits/StudentItemDepositsMonitoringView.vue') },
@@ -67,6 +75,8 @@ const routes = [
             { path: 'departments', name: 'Departments', component: () => import('@/views/academic/DepartmentsView.vue') },
             { path: 'classes', name: 'Classes', component: () => import('@/views/academic/ClassesView.vue') },
             { path: 'teachers', name: 'Teachers', component: () => import('@/views/academic/TeachersView.vue') },
+            { path: 'subjects', name: 'Subjects', component: () => import('@/views/academic/SubjectsView.vue') },
+            { path: 'lesson-periods', name: 'LessonPeriods', component: () => import('@/views/academic/LessonPeriodsView.vue') },
             // Prestasi
             { path: 'achievements', name: 'Achievements', component: () => import('@/views/achievements/AchievementsView.vue') },
             { path: 'achievement-participants', name: 'Participants', component: () => import('@/views/achievements/ParticipantsView.vue') },

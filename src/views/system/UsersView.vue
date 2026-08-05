@@ -25,7 +25,7 @@
           <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
           </svg>
-          <input v-model="search" @input="debouncedFetch" type="text" placeholder="Cari nama atau email..."
+          <input v-model="search" @input="debouncedFetch" type="text" placeholder="Cari nama atau username..."
             class="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
           />
         </div>
@@ -80,7 +80,7 @@
                 </div>
                 <div>
                   <p class="text-sm font-semibold text-gray-800">{{ user.name }}</p>
-                  <p class="text-xs text-gray-400">{{ user.email }}</p>
+                  <p class="text-xs text-gray-400">@{{ user.username || '-' }}</p>
                 </div>
               </div>
             </td>
@@ -179,12 +179,12 @@
             <p v-if="formErrors.name" class="text-xs text-red-500 mt-1">{{ formErrors.name }}</p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Email <span class="text-red-500">*</span></label>
-            <input v-model="form.email" type="email" required placeholder="email@contoh.com"
+            <label class="block text-sm font-medium text-gray-700 mb-1">Username <span class="text-red-500">*</span></label>
+            <input v-model="form.username" type="text" required placeholder="username"
               class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-              :class="{ 'border-red-300': formErrors.email }"
+              :class="{ 'border-red-300': formErrors.username }"
             />
-            <p v-if="formErrors.email" class="text-xs text-red-500 mt-1">{{ formErrors.email }}</p>
+            <p v-if="formErrors.username" class="text-xs text-red-500 mt-1">{{ formErrors.username }}</p>
           </div>
           <div v-if="!editingUser">
             <label class="block text-sm font-medium text-gray-700 mb-1">Password <span class="text-red-500">*</span></label>
@@ -353,8 +353,8 @@ const showFormModal = ref(false)
 const editingUser = ref(null)
 const formLoading = ref(false)
 const showPassword = ref(false)
-const form = reactive({ name: '', email: '', password: '', is_active: true })
-const formErrors = reactive({ name: '', email: '', password: '' })
+const form = reactive({ name: '', username: '', password: '', is_active: true })
+const formErrors = reactive({ name: '', username: '', password: '' })
 
 // Role modal
 const showRoleModal = ref(false)
@@ -409,7 +409,7 @@ const formatDate = (dt) => {
 const openCreateModal = () => {
   editingUser.value = null
   form.name = ''
-  form.email = ''
+  form.username = ''
   form.password = ''
   form.is_active = true
   showPassword.value = false
@@ -420,7 +420,7 @@ const openCreateModal = () => {
 const openEditModal = (user) => {
   editingUser.value = user
   form.name = user.name
-  form.email = user.email
+  form.username = user.username || ''
   form.password = ''
   form.is_active = user.is_active
   showPassword.value = false
@@ -433,17 +433,17 @@ const closeFormModal = () => { showFormModal.value = false }
 const submitForm = async () => {
   Object.keys(formErrors).forEach(k => formErrors[k] = '')
   if (!form.name.trim()) { formErrors.name = 'Nama wajib diisi'; return }
-  if (!form.email.trim()) { formErrors.email = 'Email wajib diisi'; return }
+  if (!form.username.trim()) { formErrors.username = 'Username wajib diisi'; return }
   if (!editingUser.value && !form.password.trim()) { formErrors.password = 'Password wajib diisi'; return }
 
   formLoading.value = true
   try {
     if (editingUser.value) {
-      const payload = { name: form.name, email: form.email, is_active: form.is_active }
+      const payload = { name: form.name, username: form.username, is_active: form.is_active }
       await userService.update(editingUser.value.id, payload)
       success('Pengguna berhasil diperbarui')
     } else {
-      await userService.create({ name: form.name, email: form.email, password: form.password, is_active: form.is_active })
+      await userService.create({ name: form.name, username: form.username, password: form.password, is_active: form.is_active })
       success('Pengguna berhasil ditambahkan')
     }
     closeFormModal()

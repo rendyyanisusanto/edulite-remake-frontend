@@ -13,6 +13,22 @@ class ClassSetupService {
         return api.get('/class-setup/unassigned-students', { params });
     }
 
+    getRombelSummary(params) {
+        return api.get('/class-setup/rombel/summary', { params });
+    }
+
+    getRombels(params) {
+        return api.get('/class-setup/rombel', { params });
+    }
+
+    getRombelDetail(class_id, params) {
+        return api.get(`/class-setup/rombel/${class_id}`, { params });
+    }
+
+    getRombelStudents(class_id, params) {
+        return api.get(`/class-setup/rombel/${class_id}/students`, { params });
+    }
+
     bulkAssign(data) {
         return api.post('/class-setup/assign', data);
     }

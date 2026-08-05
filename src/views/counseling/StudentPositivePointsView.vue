@@ -2,7 +2,13 @@
   <div class="space-y-6">
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
       <h1 class="text-2xl font-bold text-gray-800">Catatan Positif Siswa</h1>
-      <BaseButton @click="openCreateModal">Catat Poin Positif</BaseButton>
+      <div class="flex items-center gap-3">
+        <select v-model="selectedAcademicYear" @change="handleAcademicYearChange" class="block w-48 rounded-md border-gray-300 px-3 py-2 border bg-white focus:ring-primary focus:border-primary">
+          <option value="">Semua Tahun Ajaran</option>
+          <option v-for="y in academicYears" :key="y.id" :value="y.id">{{ y.name }}</option>
+        </select>
+        <BaseButton @click="openCreateModal">Catat Poin Positif</BaseButton>
+      </div>
     </div>
 
     <BaseTable :columns="columns" :data="items" :loading="loading" :total="total" :currentPage="currentPage" :perPage="limit" :searchQuery="search" @update:searchQuery="handleSearch" @page-change="handlePageChange" @sort="handleSort" :sortBy="sortBy" :sortDesc="sortDesc">
@@ -61,6 +67,14 @@
           <BaseInput id="location" v-model="form.location" label="Lokasi" placeholder="Contoh: Lingkungan Sekolah" />
           
           <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Tahun Ajaran</label>
+            <select v-model="form.academic_year_id" class="block w-full rounded-md border-gray-300 px-3 py-2 border bg-white/50">
+              <option value="">Otomatis (Tahun Aktif)</option>
+              <option v-for="y in academicYears" :key="y.id" :value="y.id">{{ y.name }}</option>
+            </select>
+          </div>
+
+          <div class="mb-4 sm:col-span-2">
             <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
             <select v-model="form.status" class="block w-full rounded-md border-gray-300 px-3 py-2 border bg-white/50">
               <option value="PENDING">Pending</option>
@@ -105,7 +119,7 @@ import { academicYearService } from '@/services/api/academic.service'
 import { useToast } from '@/composables/useToast'
 
 const { success, error: showError } = useToast()
-const items = ref([]); const typeOptions = ref([]); const academicYears = ref([]); const activeAcademicYearId = ref(null);
+const items = ref([]); const typeOptions = ref([]); const academicYears = ref([]); const activeAcademicYearId = ref(null); const selectedAcademicYear = ref('');
 const loading = ref(false); const total = ref(0); const currentPage = ref(1); const limit = ref(10); const search = ref(''); const sortBy = ref('date'); const sortDesc = ref(true)
 const showModal = ref(false); const showDeleteModal = ref(false); const isEditing = ref(false); const saving = ref(false); const deleting = ref(false); const currentItem = ref(null)
 
@@ -130,18 +144,39 @@ const getStatusBadge = (status) => {
   }
 }
 
-const fetchData = async () => { loading.value = true; try { const r = await studentPositivePointService.getAll({ page: currentPage.value, limit: limit.value, search: search.value, sortBy: sortBy.value, sortDesc: sortDesc.value }); if (r.success) { items.value = r.data.studentPositivePoints; total.value = r.data.totalItems; } } catch (e) { showError('Gagal mengambil data') } finally { loading.value = false } }
+const handleAcademicYearChange = () => {
+  currentPage.value = 1
+  fetchData()
+}
+
+const fetchData = async () => { 
+  loading.value = true; 
+  try { 
+    const r = await studentPositivePointService.getAll({ 
+      page: currentPage.value, 
+      limit: limit.value, 
+      search: search.value, 
+      sortBy: sortBy.value, 
+      sortDesc: sortDesc.value,
+      academic_year_id: selectedAcademicYear.value
+    }); 
+    if (r.success) { items.value = r.data.studentPositivePoints; total.value = r.data.totalItems; } 
+  } catch (e) { showError('Gagal mengambil data') } finally { loading.value = false } 
+}
 
 const loadMasterData = async () => { 
   try { 
     const rTypes = await positivePointTypeService.getAll({ limit: 100 }); 
     typeOptions.value = rTypes.data.positivePointTypes || [];
     
-    const rYears = await academicYearService.getAll();
+    const rYears = await academicYearService.getAll({ limit: 100 });
     if (rYears.success) {
       academicYears.value = rYears.data.academicYears || [];
       const active = academicYears.value.find(y => y.is_active);
-      if (active) activeAcademicYearId.value = active.id;
+      if (active) {
+          activeAcademicYearId.value = active.id;
+          selectedAcademicYear.value = active.id;
+      }
     }
   } catch(e) {} 
 }
@@ -170,6 +205,7 @@ const handleSort = (k) => { if (sortBy.value === k) sortDesc.value = !sortDesc.v
 const openCreateModal = () => { 
     isEditing.value = false; 
     currentItem.value = null; 
+    for (const key in form) delete form[key];
     Object.assign(form, { ...defaultForm, date: new Date().toISOString().split('T')[0], academic_year_id: activeAcademicYearId.value }); 
     showModal.value = true 
 }
@@ -207,5 +243,5 @@ const deleteData = async () => {
   } catch (e) { showError('Gagal menghapus') } finally { deleting.value = false } 
 }
 
-onMounted(() => { fetchData(); loadMasterData() })
+onMounted(async () => { await loadMasterData(); fetchData(); })
 </script>

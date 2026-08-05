@@ -166,6 +166,7 @@ const staticMenuGroups = [
       { name: 'Dokumen Siswa', route: '/student-docs', permission_code: 'student_document.view' },
       { name: 'Riwayat Kelas', route: '/class-history', permission_code: 'class_history.view' },
       { name: 'Penempatan Kelas', route: '/class-setup', permission_code: 'class_assignment.view' },
+      { name: 'Rombel', route: '/rombels', permission_code: 'class_assignment.view' },
       { name: 'Mutasi Siswa', route: '/transfers', permission_code: 'student_transfer.view' },
       { name: 'Kartu Pelajar', route: '/id-cards', permission_code: 'id_card.view' },
     ]

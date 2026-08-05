@@ -2,7 +2,13 @@
   <div class="space-y-6">
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
       <h1 class="text-2xl font-bold text-gray-800">Data Pelanggaran Siswa</h1>
-      <BaseButton @click="openCreateModal">Catat Pelanggaran</BaseButton>
+      <div class="flex items-center gap-3">
+        <select v-model="selectedAcademicYear" @change="handleAcademicYearChange" class="block w-48 rounded-md border-gray-300 px-3 py-2 border bg-white focus:ring-primary focus:border-primary">
+          <option value="">Semua Tahun Ajaran</option>
+          <option v-for="y in academicYears" :key="y.id" :value="y.id">{{ y.name }}</option>
+        </select>
+        <BaseButton @click="openCreateModal">Catat Pelanggaran</BaseButton>
+      </div>
     </div>
 
     <BaseTable :columns="columns" :data="items" :loading="loading" :total="total" :currentPage="currentPage" :perPage="limit" :searchQuery="search" @update:searchQuery="handleSearch" @page-change="handlePageChange" @sort="handleSort" :sortBy="sortBy" :sortDesc="sortDesc">
@@ -64,6 +70,14 @@
           </div>
 
           <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Tahun Ajaran</label>
+            <select v-model="form.academic_year_id" class="block w-full rounded-md border-gray-300 px-3 py-2 border bg-white/50">
+              <option value="">Otomatis (Tahun Aktif)</option>
+              <option v-for="y in academicYears" :key="y.id" :value="y.id">{{ y.name }}</option>
+            </select>
+          </div>
+
+          <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
             <select v-model="form.status" class="block w-full rounded-md border-gray-300 px-3 py-2 border bg-white/50">
               <option value="PENDING">Pending</option>
@@ -99,13 +113,16 @@ import BaseInput from '@/components/forms/BaseInput.vue'
 import BaseSearchSelect from '@/components/forms/BaseSearchSelect.vue'
 import { studentViolationService, violationTypeService } from '@/services/api/violation.service'
 import studentService from '@/services/api/student.service'
+import { academicYearService } from '@/services/api/academic.service'
 import { useToast } from '@/composables/useToast'
 
 const { success, error: showError } = useToast()
 const items = ref([]); const typeOptions = ref([]); const loading = ref(false); const total = ref(0); const currentPage = ref(1); const limit = ref(10); const search = ref(''); const sortBy = ref('date'); const sortDesc = ref(true)
 const showModal = ref(false); const showDeleteModal = ref(false); const isEditing = ref(false); const saving = ref(false); const deleting = ref(false); const currentItem = ref(null)
-const defaultForm = { student_id: '', student_name: '', type_id: '', date: new Date().toISOString().split('T')[0], location: '', description: '', status: 'PENDING' }
+const defaultForm = { student_id: '', student_name: '', type_id: '', date: new Date().toISOString().split('T')[0], location: '', description: '', status: 'PENDING', academic_year_id: '' }
 const form = reactive({ ...defaultForm })
+const academicYears = ref([])
+const selectedAcademicYear = ref('')
 
 const columns = [
   { key: 'date', label: 'Tanggal', sortable: true },
@@ -134,9 +151,38 @@ const getStatusBadge = (status) => {
   }
 }
 
-const fetchData = async () => { loading.value = true; try { const r = await studentViolationService.getAll({ page: currentPage.value, limit: limit.value, search: search.value, sortBy: sortBy.value, sortDesc: sortDesc.value }); if (r.success) { items.value = r.data.studentViolations; total.value = r.data.totalItems; } } catch (e) { showError('Gagal mengambil data') } finally { loading.value = false } }
+const handleAcademicYearChange = () => {
+  currentPage.value = 1
+  fetchData()
+}
+
+const fetchData = async () => { 
+  loading.value = true; 
+  try { 
+    const r = await studentViolationService.getAll({ 
+      page: currentPage.value, 
+      limit: limit.value, 
+      search: search.value, 
+      sortBy: sortBy.value, 
+      sortDesc: sortDesc.value,
+      academic_year_id: selectedAcademicYear.value
+    }); 
+    if (r.success) { items.value = r.data.studentViolations; total.value = r.data.totalItems; } 
+  } catch (e) { showError('Gagal mengambil data') } finally { loading.value = false } 
+}
 
 const loadTypes = async () => { try { const r = await violationTypeService.getAll({ limit: 100 }); typeOptions.value = r.data.violationTypes || [] } catch(e) {} }
+
+const loadAcademicYears = async () => {
+  try {
+    const r = await academicYearService.getAll({ limit: 100 })
+    if (r.success) {
+      academicYears.value = r.data.academicYears || []
+      const active = academicYears.value.find(y => y.is_active)
+      if (active) selectedAcademicYear.value = active.id
+    }
+  } catch (e) {}
+}
 
 const fetchStudentOptions = async (query) => {
   try {
@@ -151,10 +197,16 @@ const fetchStudentOptions = async (query) => {
 const handlePageChange = (p) => { currentPage.value = p; fetchData() }
 let st; const handleSearch = (v) => { search.value = v; clearTimeout(st); st = setTimeout(() => { currentPage.value = 1; fetchData() }, 500) }
 const handleSort = (k) => { if (sortBy.value === k) sortDesc.value = !sortDesc.value; else { sortBy.value = k; sortDesc.value = true }; fetchData() }
-const openCreateModal = () => { isEditing.value = false; currentItem.value = null; Object.assign(form, { ...defaultForm, date: new Date().toISOString().split('T')[0] }); showModal.value = true }
+const openCreateModal = () => { 
+    isEditing.value = false; 
+    currentItem.value = null; 
+    for (const key in form) delete form[key];
+    Object.assign(form, { ...defaultForm, date: new Date().toISOString().split('T')[0] }); 
+    showModal.value = true 
+}
 const openEditModal = (item) => { isEditing.value = true; currentItem.value = item; Object.assign(form, item); form.student_name = item.student?.full_name || ''; showModal.value = true }
 const confirmDelete = (item) => { currentItem.value = item; showDeleteModal.value = true }
 const saveData = async () => { if (!form.student_id || !form.type_id || !form.date) return showError('Lengkapi siswa, jenis, dan tanggal!'); saving.value = true; try { if (isEditing.value) await studentViolationService.update(currentItem.value.id, form); else await studentViolationService.create(form); success('Data tersimpan'); showModal.value = false; fetchData() } catch (e) { showError('Gagal menyimpan') } finally { saving.value = false } }
 const deleteData = async () => { deleting.value = true; try { await studentViolationService.delete(currentItem.value.id); success('Data dihapus'); showDeleteModal.value = false; if (items.value.length === 1 && currentPage.value > 1) currentPage.value--; fetchData() } catch (e) { showError('Gagal menghapus') } finally { deleting.value = false } }
-onMounted(() => { fetchData(); loadTypes() })
+onMounted(async () => { await loadAcademicYears(); fetchData(); loadTypes() })
 </script>
