@@ -6,7 +6,12 @@
         <h1 class="text-2xl font-bold text-gray-800">{{ detail.name || 'Detail Rombel' }}</h1>
         <p class="text-sm text-gray-500">{{ detail.academic_year?.name || '-' }}</p>
       </div>
-      <button @click="showAddModal = true" class="px-3 py-2 rounded-lg bg-primary text-white text-sm hover:bg-primary/90 self-start">Tambah Siswa</button>
+      <div class="flex items-center gap-2">
+        <button @click="printReport" :disabled="printing" class="px-3 py-2 rounded-lg bg-primary text-white text-sm hover:bg-primary/90 self-start disabled:opacity-60">
+          {{ printing ? 'Mendownload...' : 'Cetak Laporan' }}
+        </button>
+        <button @click="showAddModal = true" class="px-3 py-2 rounded-lg bg-primary text-white text-sm hover:bg-primary/90 self-start">Tambah Siswa</button>
+      </div>
     </div>
 
     <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 grid grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
@@ -118,6 +123,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import BaseModal from '@/components/modals/BaseModal.vue'
 import classSetupService from '@/services/api/classSetup.service'
+import classReportService from '@/services/api/classReport.service'
 import { useToast } from '@/composables/useToast'
 
 const route = useRoute()
@@ -133,6 +139,7 @@ const page = ref(1)
 const limit = ref(20)
 const search = ref('')
 const loadingStudents = ref(false)
+const printing = ref(false)
 
 const showAddModal = ref(false)
 const unassignedStudents = ref([])
@@ -266,6 +273,24 @@ const submitRemoveStudent = async () => {
     showError(err.message || 'Gagal mengeluarkan siswa')
   } finally {
     removing.value = false
+  }
+}
+
+const printReport = async () => {
+  try {
+    printing.value = true
+    const pdfBlob = await classReportService.printPdf(classId.value, academicYearId.value)
+    const url = URL.createObjectURL(new Blob([pdfBlob], { type: 'application/pdf' }))
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `laporan-siswa-${detail.value.name || 'kelas'}-${new Date().toISOString().slice(0, 10)}.pdf`
+    a.click()
+    URL.revokeObjectURL(url)
+    success('Laporan berhasil didownload')
+  } catch (err) {
+    showError(err.response?.data?.message || err.message || 'Gagal mendownload laporan')
+  } finally {
+    printing.value = false
   }
 }
 

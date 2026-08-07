@@ -53,6 +53,7 @@ const routes = [
             { path: 'class-setup', name: 'ClassSetup', component: () => import('@/views/students/ClassSetupView.vue') },
             { path: 'rombels', name: 'Rombels', component: () => import('@/views/students/RombelView.vue') },
             { path: 'rombels/:classId', name: 'RombelDetail', component: () => import('@/views/students/RombelDetailView.vue') },
+            { path: 'class-reports/:classId', name: 'ClassReportPrint', component: () => import('@/views/students/ClassReportPrintView.vue') },
             { path: 'transfers', name: 'Transfers', component: () => import('@/views/students/TransfersView.vue') },
             { path: 'student-item-deposits', name: 'StudentItemDeposits', component: () => import('@/views/student-item-deposits/StudentItemDepositsView.vue') },
             { path: 'student-item-deposits/monitoring', name: 'StudentItemDepositsMonitoring', component: () => import('@/views/student-item-deposits/StudentItemDepositsMonitoringView.vue') },
