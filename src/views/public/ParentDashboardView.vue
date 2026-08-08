@@ -92,33 +92,51 @@
 
             <div v-else-if="data" class="px-5 space-y-5 mt-1 flex-1">
                 
-                <!-- 1. Kehadiran -->
+                <!-- 1. Presensi Siswa -->
                 <section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                     <div class="px-5 py-3.5 border-b border-slate-100 bg-slate-50/50">
                         <h2 class="font-bold text-slate-800 flex items-center gap-2 text-[15px]">
-                            <svg class="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            Kehadiran
+                            <svg class="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                            Presensi Siswa <span v-if="selectedFilter === 'last7days'" class="text-xs font-normal text-slate-500 ml-1">(7 Hari Terakhir)</span>
                         </h2>
                     </div>
-                    <div class="p-5">
-                        <div v-if="data.attendance" class="grid grid-cols-2 gap-4">
-                            <div>
-                                <div class="text-[11px] font-semibold tracking-wider uppercase text-slate-400 mb-1">Jam Masuk</div>
-                                <div class="font-bold text-slate-800 text-xl">{{ data.attendance.clock_in || '-' }}</div>
-                            </div>
-                            <div>
-                                <div class="text-[11px] font-semibold tracking-wider uppercase text-slate-400 mb-1">Jam Pulang</div>
-                                <div class="font-bold text-slate-800 text-xl">{{ data.attendance.clock_out || '-' }}</div>
-                            </div>
-                            <div class="col-span-2 mt-3 flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-100">
-                                <span class="text-sm font-semibold text-slate-600">Status Kedatangan</span>
-                                <span :class="['text-[11px] font-bold px-3 py-1.5 rounded-lg uppercase tracking-wider', data.attendance.late_minutes > 0 ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700']">
-                                    {{ data.attendance.late_minutes > 0 ? `Terlambat ${data.attendance.late_minutes} mnt` : 'Tepat Waktu' }}
+                    <div class="p-0">
+                        <div v-if="data.tahfidz_attendances && data.tahfidz_attendances.length > 0" class="divide-y divide-slate-100">
+                            <div v-for="(att, i) in data.tahfidz_attendances" :key="i" class="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center shrink-0" 
+                                         :class="{
+                                            'bg-emerald-100 text-emerald-600': att.status === 'present',
+                                            'bg-blue-100 text-blue-600': att.status === 'permission',
+                                            'bg-amber-100 text-amber-600': att.status === 'sick',
+                                            'bg-red-100 text-red-600': att.status === 'absent'
+                                         }">
+                                        <svg v-if="att.status === 'present'" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                        <svg v-else-if="att.status === 'permission'" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                        <svg v-else-if="att.status === 'sick'" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                                        <svg v-else class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold text-slate-800">{{ getFormattedDate(att.date) }}</p>
+                                        <p v-if="att.notes" class="text-xs text-slate-500 mt-0.5">{{ att.notes }}</p>
+                                    </div>
+                                </div>
+                                <span class="text-[11px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider"
+                                      :class="{
+                                        'bg-emerald-50 text-emerald-700 border border-emerald-200': att.status === 'present',
+                                        'bg-blue-50 text-blue-700 border border-blue-200': att.status === 'permission',
+                                        'bg-amber-50 text-amber-700 border border-amber-200': att.status === 'sick',
+                                        'bg-red-50 text-red-700 border border-red-200': att.status === 'absent'
+                                      }">
+                                    {{ getStatusLabel(att.status) }}
                                 </span>
                             </div>
                         </div>
-                        <div v-else class="text-center py-5">
-                            <p class="text-slate-400 text-sm">Belum ada data kehadiran.</p>
+                        <div v-else class="text-center py-6">
+                            <div class="w-12 h-12 mx-auto bg-slate-50 rounded-full flex items-center justify-center mb-3">
+                                <svg class="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                            <p class="text-slate-400 text-sm">Belum ada data kehadiran Tahfidz.</p>
                         </div>
                     </div>
                 </section>
@@ -272,7 +290,7 @@ const filters = [
     { label: '7 Hari Terakhir', value: 'last7days' }
 ];
 
-const selectedFilter = ref('today');
+const selectedFilter = ref('last7days');
 const customDate = ref('');
 
 // Computed values
@@ -284,13 +302,26 @@ const studentPhoto = computed(() => {
 });
 
 const getStatusIcon = (status) => {
-    if (status === 'Sedang di Sekolah') {
+    if (status === 'Terekap') {
         return `<svg class="w-3.5 h-3.5 text-emerald-300" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>`;
     }
-    if (status === 'Sudah Pulang') {
-        return `<svg class="w-3.5 h-3.5 text-slate-300" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>`;
-    }
     return `<svg class="w-3.5 h-3.5 text-rose-300" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>`;
+};
+
+const getFormattedDate = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return new Intl.DateTimeFormat('id-ID', { weekday: 'long', day: 'numeric', month: 'short' }).format(date);
+};
+
+const getStatusLabel = (status) => {
+    switch(status) {
+        case 'present': return 'Hadir';
+        case 'permission': return 'Izin';
+        case 'sick': return 'Sakit';
+        case 'absent': return 'Alpa';
+        default: return status;
+    }
 };
 
 const getTimelineIcon = (iconStr) => {
@@ -342,7 +373,10 @@ const fetchData = async (isPolling = false) => {
         
         const dateParam = getDateParam();
         const response = await publicApi.get(`/public/student-dashboard/${studentId}`, {
-            params: { date: dateParam }
+            params: { 
+                date: dateParam,
+                filter: customDate.value ? 'custom' : selectedFilter.value
+            }
         });
         
         if (response.success) {

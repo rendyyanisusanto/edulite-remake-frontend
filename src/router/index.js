@@ -35,6 +35,31 @@ const routes = [
         component: () => import('@/views/student-item-deposits/StudentItemDepositsKioskView.vue')
     },
     {
+        path: '/tahfidz',
+        component: () => import('@/layouts/MainLayout.vue'),
+        meta: { requiresAuth: true },
+        children: [
+            {
+                path: 'attendance',
+                name: 'tahfidz-attendance',
+                component: () => import('@/views/tahfidz/Attendance.vue'),
+                meta: { 
+                    title: 'Absen Tahfidz',
+                    permission: 'tahfidz_attendance.view'
+                }
+            },
+            {
+                path: 'recap',
+                name: 'tahfidz-recap',
+                component: () => import('@/views/tahfidz/Recap.vue'),
+                meta: { 
+                    title: 'Rekap Tahfidz',
+                    permission: 'tahfidz_attendance.report'
+                }
+            }
+        ]
+    },
+    {
         path: '/',
         component: () => import('@/layouts/MainLayout.vue'),
         meta: { requiresAuth: true },
@@ -121,6 +146,10 @@ const routes = [
             { path: 'attendance/history', name: 'AttendanceHistory', component: () => import('@/views/attendance/AttendanceHistoryView.vue') },
             { path: 'attendance/reports', name: 'AttendanceReports', component: () => import('@/views/attendance/AttendanceReportsView.vue') },
             { path: 'attendance/requests', name: 'AttendanceRequests', component: () => import('@/views/attendance/AttendanceRequestsView.vue') },
+            // Student Attendance
+            { path: 'attendance/recap', name: 'StudentAttendanceRecap', component: () => import('@/views/student-attendance/AttendanceRecapView.vue'), meta: { permissions: ['attendance.view'] } },
+            { path: 'attendance/input', name: 'StudentAttendanceInput', component: () => import('@/views/student-attendance/AttendanceInputView.vue'), meta: { permissions: ['attendance.view'] } },
+            { path: 'attendance/import', name: 'StudentAttendanceImport', component: () => import('@/views/student-attendance/AttendanceImportView.vue'), meta: { permissions: ['attendance.view', 'attendance.import'] } },
             // RFID Siswa
             { path: 'student-rfid/master/shifts', name: 'StudentAttendanceShiftMaster', component: () => import('@/views/student-rfid/StudentAttendanceShiftMasterView.vue') },
             { path: 'student-rfid/master/shift-classes', name: 'StudentAttendanceShiftClassMapping', component: () => import('@/views/student-rfid/StudentAttendanceShiftClassMappingView.vue') },
