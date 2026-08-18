@@ -17,6 +17,13 @@ class ClassReportService {
       responseType: 'blob'
     })
   }
+
+  downloadAllZipped(academicYearId) {
+    return api.get(`/class-reports/all/pdf-zip`, {
+      params: { academic_year_id: academicYearId },
+      responseType: 'blob'
+    })
+  }
 }
 
 export default new ClassReportService()

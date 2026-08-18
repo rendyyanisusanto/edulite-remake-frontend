@@ -1,14 +1,20 @@
-﻿<template>
+<template>
   <div class="space-y-5">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div>
         <h1 class="text-2xl font-bold text-gray-800">Rombel</h1>
         <p class="text-sm text-gray-500 mt-1">Pengelolaan rombel berdasarkan tahun ajaran aktif.</p>
       </div>
-      <button @click="refreshData" class="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-600 hover:text-primary hover:bg-primary/5">
-        <span :class="{ 'animate-spin': loading }">?</span>
-        Refresh
-      </button>
+      <div class="flex items-center gap-2">
+        <button v-if="selectedAcademicYear" @click="downloadAll" :disabled="downloadingAll" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-white text-sm hover:bg-primary/90 disabled:opacity-60">
+          <span v-if="downloadingAll" class="animate-spin">?</span>
+          {{ downloadingAll ? 'Mendownload...' : 'Download Semua (ZIP)' }}
+        </button>
+        <button @click="refreshData" class="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-600 hover:text-primary hover:bg-primary/5">
+          <span :class="{ 'animate-spin': loading }">?</span>
+          Refresh
+        </button>
+      </div>
     </div>
 
     <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
@@ -102,11 +108,13 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { academicYearService, gradeService, departmentService } from '@/services/api/academic.service'
 import classSetupService from '@/services/api/classSetup.service'
+import classReportService from '@/services/api/classReport.service'
 import { useToast } from '@/composables/useToast'
 
 const router = useRouter()
-const { error: showError } = useToast()
+const { success, error: showError } = useToast()
 
+const downloadingAll = ref(false)
 const loading = ref(false)
 const summary = ref({})
 const rombels = ref([])
@@ -165,6 +173,25 @@ const refreshData = () => loadData()
 
 const openDetail = (rombel) => {
   router.push({ name: 'RombelDetail', params: { classId: rombel.id }, query: { academic_year_id: selectedAcademicYear.value } })
+}
+
+const downloadAll = async () => {
+  if (!selectedAcademicYear.value) return
+  try {
+    downloadingAll.value = true
+    const zipBlob = await classReportService.downloadAllZipped(selectedAcademicYear.value)
+    const url = URL.createObjectURL(new Blob([zipBlob], { type: 'application/zip' }))
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `laporan-semua-kelas-${new Date().toISOString().slice(0, 10)}.zip`
+    a.click()
+    URL.revokeObjectURL(url)
+    success('Laporan semua kelas berhasil didownload')
+  } catch (err) {
+    showError(err.message || 'Gagal mendownload laporan semua kelas')
+  } finally {
+    downloadingAll.value = false
+  }
 }
 
 onMounted(async () => {
