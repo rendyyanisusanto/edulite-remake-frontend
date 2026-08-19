@@ -35,6 +35,11 @@ const routes = [
         component: () => import('@/views/student-item-deposits/StudentItemDepositsKioskView.vue')
     },
     {
+        path: '/kiosk/manual',
+        name: 'ManualKiosk',
+        component: () => import('@/views/student-rfid/ManualKioskView.vue')
+    },
+    {
         path: '/tahfidz',
         component: () => import('@/layouts/MainLayout.vue'),
         meta: { requiresAuth: true },
