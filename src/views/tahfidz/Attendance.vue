@@ -78,7 +78,8 @@
   </div>
 
   <!-- Attendance Modal -->
-  <div v-if="showAttendanceModal" class="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 sm:p-6">
+  <Teleport to="body">
+    <div v-if="showAttendanceModal" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 sm:p-6">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
       <!-- Modal Header -->
       <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white">
@@ -195,9 +196,11 @@
       </div>
     </div>
   </div>
+  </Teleport>
 
   <!-- Import Modal (Higher z-index) -->
-  <div v-if="showImportModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+  <Teleport to="body">
+    <div v-if="showImportModal" class="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-semibold text-gray-800">Import Absen Tahfidz</h3>
@@ -259,6 +262,7 @@
       </div>
     </div>
   </div>
+  </Teleport>
 </template>
 
 
