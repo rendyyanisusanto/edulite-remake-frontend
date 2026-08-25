@@ -1,8 +1,8 @@
 import api from './api';
 
 class TahfidzAttendanceService {
-    getClasses() {
-        return api.get('/v1/tahfidz-attendance/classes');
+    getClasses(params) {
+        return api.get('/v1/tahfidz-attendance/classes', { params });
     }
 
     getAttendanceByClass(classId, date) {
