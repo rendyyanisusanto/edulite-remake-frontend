@@ -640,6 +640,7 @@ function onStudentSearchInput() {
   clearTimeout(studentSearchTimer)
   if (studentSearchQuery.value.length < 2) { studentSearchResults.value = []; return }
   searchingStudents.value = true
+  showStudentDropdown.value = true
   studentSearchTimer = setTimeout(async () => {
     try {
       const res = await api.get('/students', { params: { search: studentSearchQuery.value, limit: 20 } })

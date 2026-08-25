@@ -19,6 +19,91 @@
       </div>
     </div>
 
+    <!-- Filter Kelas (Searchable) -->
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3 flex flex-wrap items-center gap-3">
+      <div class="flex items-center gap-2 flex-1 min-w-[220px] max-w-sm">
+        <label class="text-xs font-medium text-gray-600 whitespace-nowrap">Filter Kelas:</label>
+        <div class="relative w-full" ref="classDropdownRef">
+          <!-- Input trigger -->
+          <div
+            @click="showClassDropdown = !showClassDropdown"
+            class="flex items-center justify-between w-full rounded-md border border-gray-300 px-3 py-1.5 bg-white text-sm cursor-pointer hover:border-blue-400 transition-colors"
+            :class="showClassDropdown ? 'border-blue-500 ring-1 ring-blue-500' : ''"
+          >
+            <span :class="filterClassId ? 'text-gray-800 font-medium' : 'text-gray-400'">
+              {{ filterClassId ? (classOptions.find(c => c.id == filterClassId)?.name || 'Pilih Kelas') : 'Semua Kelas' }}
+            </span>
+            <div class="flex items-center gap-1">
+              <button
+                v-if="filterClassId"
+                @click.stop="clearClassFilter"
+                class="text-gray-400 hover:text-red-500 transition-colors p-0.5 rounded"
+              >
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+              <svg class="h-4 w-4 text-gray-400" :class="showClassDropdown ? 'rotate-180' : ''" style="transition: transform 0.2s" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Dropdown panel -->
+          <div
+            v-if="showClassDropdown"
+            class="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg"
+          >
+            <!-- Search input -->
+            <div class="p-2 border-b border-gray-100">
+              <div class="relative">
+                <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input
+                  v-model="classSearch"
+                  @click.stop
+                  placeholder="Cari kelas..."
+                  class="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:border-blue-400"
+                  autofocus
+                />
+              </div>
+            </div>
+            <!-- Options -->
+            <div class="max-h-52 overflow-y-auto">
+              <div
+                @click="selectClass(null)"
+                class="px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 transition-colors"
+                :class="!filterClassId ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-500'"
+              >
+                Semua Kelas
+              </div>
+              <div
+                v-for="cls in filteredClassOptions"
+                :key="cls.id"
+                @click="selectClass(cls)"
+                class="px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 transition-colors flex items-center justify-between"
+                :class="filterClassId == cls.id ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'"
+              >
+                <span>{{ cls.name }}</span>
+                <svg v-if="filterClassId == cls.id" class="h-3.5 w-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+              <div v-if="filteredClassOptions.length === 0" class="px-3 py-3 text-sm text-gray-400 text-center">
+                Kelas tidak ditemukan
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <span v-if="filterClassId" class="text-xs text-blue-600 font-medium">
+        Menampilkan: <strong>{{ classOptions.find(c => c.id == filterClassId)?.name }}</strong>
+        &bull; <button @click="clearClassFilter" class="text-red-500 hover:text-red-700">Reset</button>
+      </span>
+    </div>
+
     <BaseTable
       :columns="columns"
       :data="students"
@@ -33,6 +118,15 @@
       :sortBy="sortBy"
       :sortDesc="sortDesc"
     >
+      <template #cell-class_name="{ item }">
+        <span
+          v-if="item.class_history && item.class_history.length > 0"
+          class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700"
+        >
+          {{ item.class_history[0]?.class_info?.name || '-' }}
+        </span>
+        <span v-else class="text-xs text-gray-400">-</span>
+      </template>
       <template #cell-actions="{ item }">
         <div class="flex items-center space-x-2 justify-end">
           <button @click="openDetailModal(item)" class="text-indigo-600 hover:text-indigo-900 mx-1 tooltip" title="Lihat Detail">
@@ -242,12 +336,13 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseTable from '@/components/tables/BaseTable.vue'
 import BaseModal from '@/components/modals/BaseModal.vue'
 import BaseInput from '@/components/forms/BaseInput.vue'
 import studentService from '@/services/api/student.service'
+import api from '@/services/api'
 import { useToast } from '@/composables/useToast'
 
 const { success, error: showError } = useToast()
@@ -264,6 +359,11 @@ const limit = ref(10)
 const search = ref('')
 const sortBy = ref('created_at')
 const sortDesc = ref(true)
+const filterClassId = ref('')
+const classOptions = ref([])
+const classSearch = ref('')
+const showClassDropdown = ref(false)
+const classDropdownRef = ref(null)
 
 const showModal = ref(false)
 const showDeleteModal = ref(false)
@@ -315,6 +415,7 @@ const columns = [
   { key: 'nisn', label: 'NISN', sortable: true },
   { key: 'full_name', label: 'Nama Lengkap', sortable: true },
   { key: 'gender', label: 'L/P', sortable: true },
+  { key: 'class_name', label: 'Kelas', sortable: false },
   { key: 'date_of_birth', label: 'Tgl Lahir', sortable: false },
   { key: 'actions', label: 'Aksi', sortable: false, class: 'w-36 text-right' }
 ]
@@ -405,13 +506,63 @@ const buildPayload = () => {
   }
 }
 
+// Computed: filtered class options for search
+const filteredClassOptions = computed(() => {
+  if (!classSearch.value.trim()) return classOptions.value
+  const q = classSearch.value.toLowerCase()
+  return classOptions.value.filter(c => c.name.toLowerCase().includes(q))
+})
+
+const fetchClasses = async () => {
+  try {
+    // Get active academic year
+    const yearRes = await api.get('/academic/years', { params: { limit: 50 } })
+    const years = yearRes.data?.academicYears || []
+    const activeYear = years.find(y => y.is_active)
+    if (!activeYear) {
+      // Fallback: load all classes
+      const res = await api.get('/academic/classes', { params: { limit: 200 } })
+      classOptions.value = res.data?.classes || []
+      return
+    }
+    // Load classes scoped to active academic year (returns array directly)
+    const res = await api.get('/class-setup/classes', { params: { academic_year_id: activeYear.id } })
+    const rawClasses = res.data || []
+    classOptions.value = rawClasses.map(c => ({ id: c.id, name: c.name }))
+  } catch (e) { /* silent */ }
+}
+
+const selectClass = (cls) => {
+  filterClassId.value = cls ? cls.id : ''
+  showClassDropdown.value = false
+  classSearch.value = ''
+  currentPage.value = 1
+  fetchStudents()
+}
+
+const clearClassFilter = () => {
+  filterClassId.value = ''
+  classSearch.value = ''
+  showClassDropdown.value = false
+  currentPage.value = 1
+  fetchStudents()
+}
+
+const handleClickOutsideClass = (e) => {
+  if (classDropdownRef.value && !classDropdownRef.value.contains(e.target)) {
+    showClassDropdown.value = false
+    classSearch.value = ''
+  }
+}
+
 const fetchStudents = async () => {
   loading.value = true
   try {
     const params = {
       page: currentPage.value,
       limit: limit.value,
-      search: search.value
+      search: search.value,
+      ...(filterClassId.value ? { class_id: filterClassId.value } : {})
     }
     const response = await studentService.getAll(params)
     if (response.success) {
@@ -423,6 +574,17 @@ const fetchStudents = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const handleFilterClass = () => {
+  currentPage.value = 1
+  fetchStudents()
+}
+
+const resetFilters = () => {
+  filterClassId.value = ''
+  currentPage.value = 1
+  fetchStudents()
 }
 
 const handlePageChange = (page) => {
@@ -649,6 +811,12 @@ const openParentDashboardUrl = (id) => {
 }
 
 onMounted(() => {
+  fetchClasses()
   fetchStudents()
+  document.addEventListener('click', handleClickOutsideClass)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutsideClass)
 })
 </script>
