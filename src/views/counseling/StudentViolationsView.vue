@@ -53,12 +53,15 @@
             />
           </div>
 
-          <div class="mb-4 sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Pelanggaran <span class="text-red-500">*</span></label>
-            <select v-model="form.type_id" class="block w-full rounded-md border-gray-300 px-3 py-2 border bg-white/50" required>
-              <option value="" disabled>Pilih Jenis Pelanggaran</option>
-              <option v-for="t in typeOptions" :key="t.id" :value="t.id">{{ t.name }} (Poin: {{ t.point }}) — {{ t.level?.name || '' }}</option>
-            </select>
+          <div class="sm:col-span-2">
+            <BaseSearchSelect
+              v-model="form.type_id"
+              :initial-label="form.type_name"
+              label="Jenis Pelanggaran"
+              placeholder="Ketik nama jenis pelanggaran..."
+              :fetch-options="fetchViolationTypeOptions"
+              required
+            />
           </div>
 
           <BaseInput id="date" v-model="form.date" type="date" label="Tanggal Kejadian" required />
@@ -119,7 +122,7 @@ import { useToast } from '@/composables/useToast'
 const { success, error: showError } = useToast()
 const items = ref([]); const typeOptions = ref([]); const loading = ref(false); const total = ref(0); const currentPage = ref(1); const limit = ref(10); const search = ref(''); const sortBy = ref('date'); const sortDesc = ref(true)
 const showModal = ref(false); const showDeleteModal = ref(false); const isEditing = ref(false); const saving = ref(false); const deleting = ref(false); const currentItem = ref(null)
-const defaultForm = { student_id: '', student_name: '', type_id: '', date: new Date().toISOString().split('T')[0], location: '', description: '', status: 'PENDING', academic_year_id: '' }
+const defaultForm = { student_id: '', student_name: '', type_id: '', type_name: '', date: new Date().toISOString().split('T')[0], location: '', description: '', status: 'PENDING', academic_year_id: '' }
 const form = reactive({ ...defaultForm })
 const academicYears = ref([])
 const selectedAcademicYear = ref('')
@@ -171,7 +174,17 @@ const fetchData = async () => {
   } catch (e) { showError('Gagal mengambil data') } finally { loading.value = false } 
 }
 
-const loadTypes = async () => { try { const r = await violationTypeService.getAll({ limit: 100 }); typeOptions.value = r.data.violationTypes || [] } catch(e) {} }
+const fetchViolationTypeOptions = async (query) => {
+  try {
+    const r = await violationTypeService.getAll({ search: query, limit: 30 })
+    const types = r.data.violationTypes || []
+    return types.map(t => ({
+      value: t.id,
+      label: t.name,
+      description: `Poin: ${t.point} — ${t.level?.name || 'Tanpa Level'}`
+    }))
+  } catch (e) { return [] }
+}
 
 const loadAcademicYears = async () => {
   try {
@@ -204,9 +217,9 @@ const openCreateModal = () => {
     Object.assign(form, { ...defaultForm, date: new Date().toISOString().split('T')[0] }); 
     showModal.value = true 
 }
-const openEditModal = (item) => { isEditing.value = true; currentItem.value = item; Object.assign(form, item); form.student_name = item.student?.full_name || ''; showModal.value = true }
+const openEditModal = (item) => { isEditing.value = true; currentItem.value = item; Object.assign(form, item); form.student_name = item.student?.full_name || ''; form.type_name = item.type?.name || ''; showModal.value = true }
 const confirmDelete = (item) => { currentItem.value = item; showDeleteModal.value = true }
 const saveData = async () => { if (!form.student_id || !form.type_id || !form.date) return showError('Lengkapi siswa, jenis, dan tanggal!'); saving.value = true; try { if (isEditing.value) await studentViolationService.update(currentItem.value.id, form); else await studentViolationService.create(form); success('Data tersimpan'); showModal.value = false; fetchData() } catch (e) { showError('Gagal menyimpan') } finally { saving.value = false } }
 const deleteData = async () => { deleting.value = true; try { await studentViolationService.delete(currentItem.value.id); success('Data dihapus'); showDeleteModal.value = false; if (items.value.length === 1 && currentPage.value > 1) currentPage.value--; fetchData() } catch (e) { showError('Gagal menghapus') } finally { deleting.value = false } }
-onMounted(async () => { await loadAcademicYears(); fetchData(); loadTypes() })
+onMounted(async () => { await loadAcademicYears(); fetchData() })
 </script>
