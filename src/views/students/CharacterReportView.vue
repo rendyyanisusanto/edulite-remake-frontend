@@ -5,10 +5,16 @@
         <BaseButton variant="outline" @click="goBack" class="p-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg></BaseButton>
         <h1 class="text-2xl font-bold text-gray-800">Rapor Karakter Siswa</h1>
       </div>
-      <BaseButton @click="openExportModal" :loading="exporting">
-        <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-        Export PDF
-      </BaseButton>
+      <div class="flex items-center gap-3">
+        <select v-model="selectedAcademicYear" @change="handleYearChange" class="block rounded-md border-gray-300 px-3 py-2 border bg-white focus:ring-primary focus:border-primary text-sm">
+          <option value="">Semua Tahun Ajaran</option>
+          <option v-for="y in academicYears" :key="y.id" :value="y.id">{{ y.name }}</option>
+        </select>
+        <BaseButton @click="openExportModal" :loading="exporting">
+          <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Export PDF
+        </BaseButton>
+      </div>
     </div>
 
     <!-- Loading Skeleton -->
@@ -39,6 +45,10 @@
           <div>
             <p class="text-sm text-gray-500">Kelas Saat Ini</p>
             <p class="font-medium text-gray-800">{{ reportData.student.class_name || '-' }}</p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-500">Tahun Ajaran</p>
+            <p class="font-medium text-gray-800">{{ reportData.student.active_academic_year || '-' }}</p>
           </div>
         </div>
       </div>
@@ -219,6 +229,7 @@ import { useRoute, useRouter } from 'vue-router'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseModal from '@/components/modals/BaseModal.vue'
 import studentService from '@/services/api/student.service'
+import { academicYearService } from '@/services/api/academic.service'
 import { useToast } from '@/composables/useToast'
 
 const route = useRoute()
@@ -229,6 +240,8 @@ const studentId = route.params.id
 const loading = ref(true)
 const exporting = ref(false)
 const reportData = ref(null)
+const academicYears = ref([])
+const selectedAcademicYear = ref('')
 
 const showExportModal = ref(false)
 const exportNotes = ref('')
@@ -245,7 +258,7 @@ const getImageUrl = (filename) => {
 const fetchData = async () => {
   loading.value = true
   try {
-    const res = await studentService.getCharacterReport(studentId)
+    const res = await studentService.getCharacterReport(studentId, selectedAcademicYear.value || null)
     if (res.success) {
       reportData.value = res.data
     } else {
@@ -258,10 +271,14 @@ const fetchData = async () => {
   }
 }
 
+const handleYearChange = () => {
+  fetchData()
+}
+
 const exportPdf = async () => {
     exporting.value = true
     try {
-        const response = await studentService.downloadCharacterReportPdf(studentId, exportNotes.value)
+        const response = await studentService.downloadCharacterReportPdf(studentId, exportNotes.value, selectedAcademicYear.value || null)
         
         // Handle Blob download directly because api.js already returns response.data
         const url = window.URL.createObjectURL(new Blob([response]))
@@ -287,7 +304,21 @@ const goBack = () => {
     router.push('/students')
 }
 
-onMounted(() => {
-    if (studentId) fetchData()
+const loadAcademicYears = async () => {
+    try {
+        const r = await academicYearService.getAll({ limit: 100 })
+        if (r.success) {
+            academicYears.value = r.data.academicYears || []
+            const active = academicYears.value.find(y => y.is_active)
+            if (active) selectedAcademicYear.value = active.id
+        }
+    } catch (e) {}
+}
+
+onMounted(async () => {
+    if (studentId) {
+        await loadAcademicYears()
+        fetchData()
+    }
 })
 </script>

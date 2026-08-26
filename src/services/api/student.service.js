@@ -21,13 +21,15 @@ class StudentService {
         return api.delete(`/students/${id}`)
     }
 
-    async getCharacterReport(id) {
-        return api.get(`/students/${id}/character-report`);
+    async getCharacterReport(id, academicYearId = null) {
+        return api.get(`/students/${id}/character-report`, {
+            params: { academic_year_id: academicYearId || undefined }
+        });
     }
 
-    async downloadCharacterReportPdf(id, notes = '') {
+    async downloadCharacterReportPdf(id, notes = '', academicYearId = null) {
         return api.get(`/students/${id}/character-report/pdf`, {
-            params: { notes },
+            params: { notes, academic_year_id: academicYearId || undefined },
             responseType: 'blob'
         });
     }
