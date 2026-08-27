@@ -40,6 +40,11 @@ const routes = [
         component: () => import('@/views/student-rfid/ManualKioskView.vue')
     },
     {
+        path: '/kiosk/tahfidz/:token',
+        name: 'TahfidzKioskPublic',
+        component: () => import('@/views/tahfidz/KioskPublic.vue')
+    },
+    {
         path: '/tahfidz',
         component: () => import('@/layouts/MainLayout.vue'),
         meta: { requiresAuth: true },
@@ -59,6 +64,15 @@ const routes = [
                 component: () => import('@/views/tahfidz/Recap.vue'),
                 meta: { 
                     title: 'Rekap Tahfidz',
+                    permission: 'tahfidz_attendance.report'
+                }
+            },
+            {
+                path: 'kiosks',
+                name: 'tahfidz-kiosks',
+                component: () => import('@/views/tahfidz/KioskAdmin.vue'),
+                meta: { 
+                    title: 'Kiosk Tahfidz',
                     permission: 'tahfidz_attendance.report'
                 }
             }
