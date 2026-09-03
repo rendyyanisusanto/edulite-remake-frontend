@@ -7,6 +7,18 @@
           <option value="">Semua Tahun Ajaran</option>
           <option v-for="y in academicYears" :key="y.id" :value="y.id">{{ y.name }}</option>
         </select>
+        <router-link to="/student-violations/reports">
+          <BaseButton variant="outline" class="flex items-center gap-2">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Laporan
+          </BaseButton>
+        </router-link>
+        <router-link to="/student-violations/statistics">
+          <BaseButton variant="outline" class="flex items-center gap-2 text-indigo-700 border-indigo-200 hover:bg-indigo-50">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+            Statistik
+          </BaseButton>
+        </router-link>
         <BaseButton @click="openCreateModal">Catat Pelanggaran</BaseButton>
       </div>
     </div>
