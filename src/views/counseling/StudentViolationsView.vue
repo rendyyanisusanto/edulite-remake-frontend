@@ -257,8 +257,9 @@ const loadHeaderImage = async () => {
   if (_headerImgCache) return _headerImgCache
   try {
     const apiUrl = import.meta.env.VITE_API_URL || '/api'
-    const baseUrl = apiUrl.replace(/\/api(\/v1)?$/, '')
-    const imgUrl = baseUrl === '' ? '/public/header.png' : `${baseUrl}/public/header.png`
+    // Remove trailing slash if present, then append /public/header.png
+    const base = apiUrl.replace(/\/$/, '')
+    const imgUrl = `${base}/public/header.png`
     
     const resp = await fetch(imgUrl)
     if (!resp.ok) return null
