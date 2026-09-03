@@ -40,6 +40,8 @@ const router = useRouter()
 const openFeature = (title) => {
     if (title === 'Tren Pelanggaran') {
         router.push('/student-violations/statistics/trend')
+    } else if (title === 'Pelanggaran Berdasarkan Jenis') {
+        router.push('/student-violations/statistics/type')
     } else {
         success(`Fitur "${title}" sedang dalam tahap pengembangan.`);
     }
