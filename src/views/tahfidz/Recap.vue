@@ -573,10 +573,11 @@ const exportPDF = async () => {
     const statsMap = {}
     tableData.value.students.forEach(row => {
       const cls = row.class_info?.name || 'Tidak Diketahui'
-      if (!statsMap[cls]) statsMap[cls] = { m: 0, i: 0, s: 0, a: 0 }
+      if (!statsMap[cls]) statsMap[cls] = { m: 0, i: 0, s: 0, a: 0, studentCount: 0 }
       const stat = statsMap[cls]
+      stat.studentCount++
       Object.values(row.attendances).forEach(status => {
-        if (status === 'present')    stat.m++
+        if (status === 'present')         stat.m++
         else if (status === 'permission') stat.i++
         else if (status === 'sick')       stat.s++
         else if (status === 'absent')     stat.a++
@@ -591,18 +592,21 @@ const exportPDF = async () => {
     doc.setTextColor(17, 24, 39)
     doc.text('Statistik Kehadiran per Kelas', 14, statsAfterY)
 
-    const statsHead = [['Kelas', 'Hadir (M)', 'Izin (I)', 'Sakit (S)', 'Alpa (A)', 'Total Pertemuan']]
+    const statsHead = [['Kelas', 'Hadir (M)', 'Izin (I)', 'Sakit (S)', 'Alpa (A)', 'Rata-rata Pertemuan/Siswa']]
     const statsBody = Object.entries(statsMap).map(([cls, s]) => {
       const total = s.m + s.i + s.s + s.a
-      return [cls, s.m, s.i, s.s, s.a, total]
+      const avg = s.studentCount > 0 ? (total / s.studentCount).toFixed(1) : '0'
+      return [cls, s.m, s.i, s.s, s.a, avg]
     })
     // Totals row
     const totM = statsBody.reduce((acc, r) => acc + r[1], 0)
     const totI = statsBody.reduce((acc, r) => acc + r[2], 0)
     const totS = statsBody.reduce((acc, r) => acc + r[3], 0)
     const totA = statsBody.reduce((acc, r) => acc + r[4], 0)
-    const totAll = statsBody.reduce((acc, r) => acc + r[5], 0)
-    statsBody.push(['TOTAL', totM, totI, totS, totA, totAll])
+    const totStudents = Object.values(statsMap).reduce((acc, s) => acc + s.studentCount, 0)
+    const totRecords = totM + totI + totS + totA
+    const totAvg = totStudents > 0 ? (totRecords / totStudents).toFixed(1) : '0'
+    statsBody.push(['TOTAL', totM, totI, totS, totA, totAvg])
 
     autoTable(doc, {
       head: statsHead,
