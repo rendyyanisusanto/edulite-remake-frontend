@@ -252,14 +252,21 @@ const getLevelColor = (name) => {
   return [75, 85, 99]
 }
 
-// Fetch header.png from backend static and convert to dataURL (cached)
 let _headerImgCache = null
 const loadHeaderImage = async () => {
   if (_headerImgCache) return _headerImgCache
   try {
-    const resp = await fetch('/public/header.png')
+    const apiUrl = import.meta.env.VITE_API_URL || '/api'
+    const baseUrl = apiUrl.replace(/\/api(\/v1)?$/, '')
+    const imgUrl = baseUrl === '' ? '/public/header.png' : `${baseUrl}/public/header.png`
+    
+    const resp = await fetch(imgUrl)
     if (!resp.ok) return null
     const blob = await resp.blob()
+    
+    // Prevent "wrong PNG signature" by ensuring the response is actually an image
+    if (!blob.type.startsWith('image/')) return null
+    
     return new Promise((resolve) => {
       const reader = new FileReader()
       reader.onloadend = () => { _headerImgCache = reader.result; resolve(reader.result) }
