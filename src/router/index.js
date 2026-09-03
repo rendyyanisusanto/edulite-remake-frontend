@@ -19,6 +19,12 @@ const routes = [
         meta: { public: true }
     },
     {
+        path: '/verify',
+        name: 'VerifyDocument',
+        component: () => import('@/views/public/VerifyDocumentView.vue'),
+        meta: { public: true }
+    },
+    {
         path: '/rfid-gate-scan',
         alias: ['/rfid-scan'],
         name: 'RfidScan',
