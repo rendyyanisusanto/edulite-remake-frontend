@@ -32,8 +32,12 @@
       </template>
       <template #cell-actions="{ item }">
         <div class="flex items-center space-x-2">
-          <button @click="openEditModal(item)" class="text-blue-600 hover:text-blue-900"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
-          <button @click="confirmDelete(item)" class="text-red-600 hover:text-red-900"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+          <button @click="openEditModal(item)" title="Edit" class="text-blue-600 hover:text-blue-900"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
+          <button @click="generatePdf(item)" title="Cetak Tanda Terima" :disabled="currentPdfItem === item.id" class="text-emerald-600 hover:text-emerald-900 disabled:opacity-40">
+            <svg v-if="currentPdfItem === item.id" class="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
+            <svg v-else class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+          </button>
+          <button @click="confirmDelete(item)" title="Hapus" class="text-red-600 hover:text-red-900"><svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
         </div>
       </template>
     </BaseTable>
@@ -108,6 +112,9 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
+import QRCode from 'qrcode'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseTable from '@/components/tables/BaseTable.vue'
 import BaseModal from '@/components/modals/BaseModal.vue'
@@ -116,12 +123,15 @@ import BaseSearchSelect from '@/components/forms/BaseSearchSelect.vue'
 import { studentPositivePointService, positivePointTypeService } from '@/services/api/positivePoint.service'
 import studentService from '@/services/api/student.service'
 import { academicYearService } from '@/services/api/academic.service'
+import schoolProfileService from '@/services/api/schoolProfile.service'
 import { useToast } from '@/composables/useToast'
 
 const { success, error: showError } = useToast()
 const items = ref([]); const typeOptions = ref([]); const academicYears = ref([]); const activeAcademicYearId = ref(null); const selectedAcademicYear = ref('');
 const loading = ref(false); const total = ref(0); const currentPage = ref(1); const limit = ref(10); const search = ref(''); const sortBy = ref('date'); const sortDesc = ref(true)
 const showModal = ref(false); const showDeleteModal = ref(false); const isEditing = ref(false); const saving = ref(false); const deleting = ref(false); const currentItem = ref(null)
+const currentPdfItem = ref(null)
+const schoolProfile = ref(null)
 
 const defaultForm = { student_id: '', student_name: '', type_id: '', academic_year_id: '', date: new Date().toISOString().split('T')[0], points: 0, location: '', description: '', status: 'APPROVED' }
 const form = reactive({ ...defaultForm })
@@ -243,5 +253,165 @@ const deleteData = async () => {
   } catch (e) { showError('Gagal menghapus') } finally { deleting.value = false } 
 }
 
-onMounted(async () => { await loadMasterData(); fetchData(); })
+const loadSchoolProfile = async () => {
+  try {
+    const r = await schoolProfileService.get()
+    if (r?.data) schoolProfile.value = r.data
+  } catch (e) {}
+}
+
+const formatDate = (val) => {
+  if (!val) return '-'
+  return new Date(val).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
+}
+
+let _headerImgCache = null
+const loadHeaderImage = async () => {
+  if (_headerImgCache) return _headerImgCache
+  try {
+    const apiUrl = import.meta.env.VITE_API_URL || '/api'
+    const base = apiUrl.replace(/\/$/, '')
+    const imgUrl = `${base}/public/header.png`
+    
+    const resp = await fetch(imgUrl)
+    if (!resp.ok) return null
+    const blob = await resp.blob()
+    
+    if (!blob.type.startsWith('image/')) return null
+    
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onloadend = () => { _headerImgCache = reader.result; resolve(reader.result) }
+      reader.readAsDataURL(blob)
+    })
+  } catch { return null }
+}
+
+const generatePdf = async (item) => {
+  currentPdfItem.value = item.id
+  try {
+    const r = await studentPositivePointService.getById(item.id)
+    const d = r?.data || item
+
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+    const pageW = doc.internal.pageSize.width
+    const margin = 22.6 
+
+    // Header
+    const headerImg = await loadHeaderImage()
+    let startY = 10
+
+    if (headerImg) {
+      const contentW = pageW - margin * 2
+      doc.addImage(headerImg, 'PNG', margin, 0, contentW, 0)
+      startY = 28
+    } else {
+      const sp = schoolProfile.value
+      const schoolName = sp?.school_name || 'SEKOLAH'
+      const schoolAddress = sp?.address || ''
+      const schoolPhone = sp?.phone || ''
+      doc.setFontSize(14)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(17, 24, 39)
+      doc.text(schoolName.toUpperCase(), pageW / 2, 14, { align: 'center' })
+      if (schoolAddress) {
+        doc.setFontSize(9)
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(75, 85, 99)
+        const addrLine = schoolPhone ? `${schoolAddress}  |  Telp. ${schoolPhone}` : schoolAddress
+        doc.text(addrLine, pageW / 2, 20, { align: 'center' })
+      }
+      startY = 26
+    }
+
+    // Title
+    const titleY = startY + 20
+    doc.setFontSize(12)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(17, 24, 39)
+    doc.text('BERITA ACARA POIN POSITIF SISWA', pageW / 2, titleY, { align: 'center' })
+
+    const noSurat = `No. ${String(d.id).padStart(4, '0')}/PP/${new Date(d.date || d.createdAt).getFullYear()}`
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(75, 85, 99)
+    doc.text(noSurat, pageW / 2, titleY + 6, { align: 'center' })
+
+    // Details Table
+    const tableBody = [
+      ['Tanggal Pencatatan', formatDate(d.date)],
+      ['Nama Siswa', d.student?.full_name || '-'],
+      ['NIS', d.student?.nis || '-'],
+      ['Jenis Catatan Positif', d.type?.name || '-'],
+      ['Kategori', d.type?.category || '-'],
+      ['Poin Diperoleh', `+${d.points || d.type?.points || 0}`],
+      ['Lokasi', d.location || '-'],
+      ['Tahun Ajaran', d.academic_year?.name || '-'],
+      ['Keterangan', d.description || '-'],
+      ['Dicatat Oleh', 'Tim Tatib'],
+    ]
+
+    autoTable(doc, {
+      body: tableBody,
+      startY: titleY + 13,
+      theme: 'plain',
+      styles: { font: 'helvetica', fontSize: 10, valign: 'top', cellPadding: { top: 2, bottom: 2, left: 2, right: 2 }, textColor: [31, 41, 55] },
+      columnStyles: {
+        0: { cellWidth: 55, fontStyle: 'bold', textColor: [55, 65, 81] },
+        1: { cellWidth: 'auto' }
+      },
+      didParseCell: function (data) {
+        if (data.section === 'body' && data.row.index === 5 && data.column.index === 1) {
+          data.cell.styles.textColor = [22, 163, 74] // Green
+          data.cell.styles.fontStyle = 'bold'
+        }
+      },
+      didDrawRow: function (data) {
+        if (data.section === 'body') {
+          const x = data.row.cells[0].x + data.row.cells[0].width
+          const y = data.row.cells[0].y + data.row.cells[0].height / 2 + 1
+          doc.setTextColor(55, 65, 81)
+          doc.setFontSize(10)
+          doc.text(':', x - 3, y)
+        }
+      }
+    })
+
+    // QR Verification
+    const verifyUrl = `${window.location.origin}/verify?type=positive_point&id=${d.id}&token=${d.verify_token}`
+    const qrDataUrl = await QRCode.toDataURL(verifyUrl, { margin: 1, scale: 5 })
+    
+    const afterY = doc.lastAutoTable.finalY + 15
+    const qrSize = 25
+    const rightEdge = pageW - margin
+    
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'italic')
+    const text1 = 'Tertanda tangani dan terverifikasi secara elektronik'
+    const text2 = 'Scan QR Code untuk verifikasi keaslian.'
+    const textW = doc.getTextWidth(text1)
+    const centerX = rightEdge - (textW / 2)
+    
+    doc.addImage(qrDataUrl, 'PNG', centerX - (qrSize / 2), afterY, qrSize, qrSize)
+    doc.setTextColor(75, 85, 99)
+    doc.text(text1, rightEdge, afterY + qrSize + 6, { align: 'right' })
+    doc.text(text2, rightEdge, afterY + qrSize + 11, { align: 'right' })
+
+    // Footer
+    doc.setFontSize(7.5)
+    doc.setTextColor(150, 150, 150)
+    doc.text(`Dicetak pada: ${formatDate(new Date().toISOString().split('T')[0])}`, margin, 285, { align: 'left' })
+
+    const studentName = (d.student?.full_name || 'siswa').replace(/\s+/g, '_')
+    const dateStr = (d.date || '').replace(/-/g, '')
+    doc.save(`Poin_Positif_${studentName}_${dateStr}.pdf`)
+
+  } catch (e) {
+    showError('Gagal membuat PDF: ' + (e.message || ''))
+  } finally {
+    currentPdfItem.value = null
+  }
+}
+
+onMounted(async () => { await loadMasterData(); loadSchoolProfile(); fetchData(); })
 </script>
