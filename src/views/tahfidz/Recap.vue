@@ -275,9 +275,14 @@ const tableData = computed(() => {
       }
     });
     return { ...student, summary: { m, tm } };
-  }).sort((a, b) => 
-    (a.student?.full_name || '').localeCompare(b.student?.full_name || '')
-  );
+  }).sort((a, b) => {
+    // Group by class first, then sort by student name within each class
+    const classA = a.class_info?.name || '';
+    const classB = b.class_info?.name || '';
+    const classCompare = classA.localeCompare(classB, 'id');
+    if (classCompare !== 0) return classCompare;
+    return (a.student?.full_name || '').localeCompare(b.student?.full_name || '', 'id');
+  });
 
   return {
     dates,
