@@ -652,7 +652,9 @@ const exportPDF = async () => {
     const totalDates = tableData.value.dates.length;
     if (totalDates > 3) {
       const lowAttendanceStudents = tableData.value.students.filter(row => {
-        const percentage = (row.summary.m / totalDates) * 100;
+        const totalValid = row.summary.m + row.summary.tm;
+        if (totalValid === 0) return false;
+        const percentage = (row.summary.m / totalValid) * 100;
         return percentage < 75;
       });
 
@@ -666,7 +668,8 @@ const exportPDF = async () => {
 
         const lowAttHead = [['No', 'Nama Siswa', 'Kelas', 'Kehadiran (M)', 'Persentase']];
         const lowAttBody = lowAttendanceStudents.map((row, idx) => {
-          const percentage = ((row.summary.m / totalDates) * 100).toFixed(1) + '%';
+          const totalValid = row.summary.m + row.summary.tm;
+          const percentage = ((row.summary.m / totalValid) * 100).toFixed(1) + '%';
           return [
             idx + 1,
             row.student?.full_name || '-',
