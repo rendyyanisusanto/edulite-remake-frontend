@@ -141,7 +141,7 @@
                     <span class="text-red-600 font-semibold">A</span>
                   </template>
                   <template v-else>
-                    <span class="text-red-500 font-semibold">X</span>
+                    <span class="text-gray-400 font-semibold">X</span>
                   </template>
                 </td>
                 <td class="border-r border-gray-200 px-3 py-2 whitespace-nowrap text-center text-sm font-semibold text-green-700 bg-green-50/40">
@@ -417,7 +417,7 @@ const exportExcel = async () => {
           else if (val === 'S') cell.font = { bold: true, color: { argb: 'FFCA8A04' } }
           else if (val === 'I') cell.font = { bold: true, color: { argb: 'FF2563EB' } }
           else if (val === 'A') cell.font = { bold: true, color: { argb: 'FFDC2626' } }
-          else if (val === 'X') cell.font = { bold: true, color: { argb: 'FFEF4444' } }
+          else if (val === 'X') cell.font = { bold: true, color: { argb: 'FF9CA3AF' } }
         }
       })
     })
@@ -533,7 +533,7 @@ const exportPDF = async () => {
           else if (val === 'S') { data.cell.styles.textColor = [202, 138, 4]; data.cell.styles.fontStyle = 'bold' }
           else if (val === 'I') { data.cell.styles.textColor = [37, 99, 235]; data.cell.styles.fontStyle = 'bold' }
           else if (val === 'A') { data.cell.styles.textColor = [220, 38, 38]; data.cell.styles.fontStyle = 'bold' }
-          else if (val === 'X') { data.cell.styles.textColor = [239, 68, 68]; data.cell.styles.fontStyle = 'bold' } // Changed to RED
+          else if (val === 'X') { data.cell.styles.textColor = [156, 163, 175]; data.cell.styles.fontStyle = 'bold' } // Changed to gray-400
           
           if (data.column.index === head[0].length - 2) { // M column
             data.cell.styles.textColor = [22, 163, 74]
