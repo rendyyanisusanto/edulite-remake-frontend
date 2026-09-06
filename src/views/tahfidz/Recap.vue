@@ -648,6 +648,67 @@ const exportPDF = async () => {
       }
     })
 
+    // ── Low Attendance Table (Kurang dari 75%) ──────────────────────────────
+    const totalDates = tableData.value.dates.length;
+    if (totalDates > 3) {
+      const lowAttendanceStudents = tableData.value.students.filter(row => {
+        const percentage = (row.summary.m / totalDates) * 100;
+        return percentage < 75;
+      });
+
+      if (lowAttendanceStudents.length > 0) {
+        const lowAttendanceAfterY = (doc.lastAutoTable.finalY || 38) + 10;
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(220, 38, 38); // red-600
+        doc.text('Daftar Siswa Kehadiran Kurang dari 75%', 14, lowAttendanceAfterY);
+
+        const lowAttHead = [['No', 'Nama Siswa', 'Kelas', 'Kehadiran (M)', 'Persentase']];
+        const lowAttBody = lowAttendanceStudents.map((row, idx) => {
+          const percentage = ((row.summary.m / totalDates) * 100).toFixed(1) + '%';
+          return [
+            idx + 1,
+            row.student?.full_name || '-',
+            row.class_info?.name || '-',
+            row.summary.m,
+            percentage
+          ];
+        });
+
+        autoTable(doc, {
+          head: lowAttHead,
+          body: lowAttBody,
+          startY: lowAttendanceAfterY + 4,
+          theme: 'grid',
+          styles: {
+            font: 'helvetica',
+            fontSize: 8,
+            halign: 'center',
+            valign: 'middle',
+            cellPadding: 1.5,
+            lineWidth: 0.1,
+            lineColor: [229, 231, 235],
+            textColor: [55, 65, 81]
+          },
+          headStyles: {
+            fillColor: [220, 38, 38], // red-600
+            textColor: 255,
+            fontStyle: 'bold',
+            lineWidth: 0.1,
+            lineColor: [220, 38, 38]
+          },
+          columnStyles: {
+            0: { halign: 'center', cellWidth: 15 },
+            1: { halign: 'left', cellWidth: 60, fontStyle: 'bold', textColor: [17, 24, 39] },
+            2: { halign: 'left', cellWidth: 30 },
+            3: { halign: 'center', cellWidth: 30, textColor: [22, 163, 74], fontStyle: 'bold' },
+            4: { halign: 'center', cellWidth: 30, textColor: [220, 38, 38], fontStyle: 'bold' }
+          }
+        });
+      }
+    }
+
     // Footer
     const finalY = doc.lastAutoTable.finalY || 28
     doc.setFontSize(8)
