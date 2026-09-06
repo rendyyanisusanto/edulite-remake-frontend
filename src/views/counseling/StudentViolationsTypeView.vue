@@ -7,9 +7,9 @@
             <router-link to="/student-violations/statistics" class="text-indigo-600 hover:text-indigo-800 transition-colors">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
             </router-link>
-            <h1 class="text-2xl font-bold text-gray-800">Pelanggaran Berdasarkan Jenis</h1>
+            <h1 class="text-2xl font-bold text-gray-800">Poin Pelanggaran Berdasarkan Jenis</h1>
         </div>
-        <p class="text-sm text-gray-500 mt-1 ml-7">Statistik perbandingan jumlah kasus di setiap jenis pelanggaran.</p>
+        <p class="text-sm text-gray-500 mt-1 ml-7">Statistik perbandingan total poin di setiap jenis pelanggaran.</p>
       </div>
     </div>
 
@@ -148,15 +148,19 @@ const fetchData = async () => {
 
 const chartData = computed(() => {
     const labels = rawData.value.map(t => t.type?.name || 'Lainnya')
-    const data = rawData.value.map(t => parseInt(t.total) || 0)
+    const data = rawData.value.map(t => {
+        const count = parseInt(t.total) || 0;
+        const point = parseInt(t.type?.point) || 0;
+        return count * point;
+    })
 
     return {
         labels,
         datasets: [
             {
-                label: 'Jumlah Pelanggaran',
-                backgroundColor: 'rgba(168, 85, 247, 0.8)', // Purple-500
-                hoverBackgroundColor: 'rgba(147, 51, 234, 1)', // Purple-600
+                label: 'Total Poin',
+                backgroundColor: 'rgba(239, 68, 68, 0.8)', // Red-500
+                hoverBackgroundColor: 'rgba(220, 38, 38, 1)', // Red-600
                 borderRadius: 4,
                 data: data,
             }
@@ -181,7 +185,7 @@ const chartOptions = {
             displayColors: false,
             callbacks: {
                 label: function(context) {
-                    return `${context.parsed.x} Kasus`;
+                    return `${context.parsed.x} Poin`;
                 }
             }
         }
