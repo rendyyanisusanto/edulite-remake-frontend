@@ -270,7 +270,7 @@ const tableData = computed(() => {
       const status = student.attendances[date];
       if (status === 'present') {
         m++;
-      } else {
+      } else if (status === 'sick' || status === 'permission' || status === 'absent') {
         tm++;
       }
     });
