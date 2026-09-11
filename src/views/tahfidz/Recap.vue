@@ -98,18 +98,19 @@
         </div>
       </div>
 
-      <!-- Empty State -->
-      <div v-else-if="records.length === 0" class="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-        </svg>
-        <p class="mt-4 text-gray-600 font-medium">Tidak ada data absensi untuk filter yang dipilih</p>
-      </div>
+      <!-- Tables Wrapper -->
+      <div v-else class="space-y-8">
+        <!-- Main Recap Table or Empty State -->
+        <div v-if="records.length === 0" class="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+          <p class="mt-4 text-gray-600 font-medium">Tidak ada data absensi siswa untuk filter yang dipilih</p>
+        </div>
 
-      <!-- Table -->
-      <div v-else class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="overflow-x-auto max-h-[600px] relative scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-          <table id="recap-table" class="min-w-full border-collapse">
+        <div v-else class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div class="overflow-x-auto max-h-[600px] relative scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+            <table id="recap-table" class="min-w-full border-collapse">
             <thead class="bg-gray-50/95 backdrop-blur sticky top-0 z-20 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
               <tr>
                 <th scope="col" class="border-b border-r border-gray-200 px-3 py-2.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider sticky left-0 bg-gray-50/95 z-30 min-w-[45px] backdrop-blur">No</th>
@@ -153,6 +154,59 @@
               </tr>
             </tbody>
           </table>
+          </div>
+        </div>
+
+        <!-- Class Attendance Status Table -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div class="p-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+            <div>
+              <h2 class="text-lg font-bold text-gray-800">Status Absen Kelas</h2>
+              <p class="text-xs text-gray-500 mt-0.5">Memantau kelas mana yang sudah atau belum diabsen pada rentang tanggal ini</p>
+            </div>
+            <BaseButton @click="exportClassStatusPDF" :loading="classPdfLoading" variant="outline" class="bg-red-50 text-red-700 border-red-200 hover:bg-red-100 py-1.5 px-3 text-sm h-auto">
+              <svg class="w-4 h-4 mr-1.5 inline-block -mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              </svg>
+              Cetak PDF Status
+            </BaseButton>
+          </div>
+          <div class="overflow-x-auto max-h-[400px] relative scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+            <table class="min-w-full border-collapse">
+              <thead class="bg-white sticky top-0 z-20 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+                <tr>
+                  <th scope="col" class="border-b border-r border-gray-200 px-3 py-2.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider sticky left-0 bg-white z-30 min-w-[45px]">No</th>
+                  <th scope="col" class="border-b border-r border-gray-200 px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider sticky left-[45px] bg-white z-30 min-w-[150px]">Kelas</th>
+                  <th v-for="date in classAttendanceStatus.dates" :key="date" scope="col" class="border-b border-r border-gray-200 px-1.5 py-2.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider min-w-[60px]">
+                    {{ new Date(date).getDate() }}/{{ new Date(date).getMonth() + 1 }}
+                  </th>
+                  <th scope="col" class="border-b border-r border-gray-200 px-3 py-2.5 text-center text-xs font-semibold text-green-700 uppercase tracking-wider bg-green-50/95 min-w-[80px]">Diabsen</th>
+                  <th scope="col" class="border-b border-gray-200 px-3 py-2.5 text-center text-xs font-semibold text-red-700 uppercase tracking-wider bg-red-50/95 min-w-[80px]">Belum</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-100">
+                <tr v-for="(row, index) in classAttendanceStatus.classes" :key="row.class_info.id" class="hover:bg-blue-50/60 even:bg-gray-50/40 transition-colors group">
+                  <td class="border-r border-gray-200 px-3 py-2 whitespace-nowrap text-sm text-gray-500 text-center sticky left-0 bg-white group-hover:bg-blue-50/90 group-even:bg-gray-50/90 z-10">{{ index + 1 }}</td>
+                  <td class="border-r border-gray-200 px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-800 sticky left-[45px] bg-white group-hover:bg-blue-50/90 group-even:bg-gray-50/90 z-10">{{ row.class_info.name }}</td>
+                  <td v-for="date in classAttendanceStatus.dates" :key="date" class="border-r border-gray-200 px-1.5 py-2 whitespace-nowrap text-center">
+                    <span v-if="row.status[date]" class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-600 shadow-sm">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                    </span>
+                    <span v-else class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-100 text-red-600 shadow-sm">
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </span>
+                  </td>
+                  <td class="border-r border-gray-200 px-3 py-2 whitespace-nowrap text-center text-sm font-semibold text-green-700 bg-green-50/40">{{ row.total_filled }}</td>
+                  <td class="px-3 py-2 whitespace-nowrap text-center text-sm font-semibold text-red-700 bg-red-50/40">{{ row.total_unfilled }}</td>
+                </tr>
+                <tr v-if="classAttendanceStatus.classes.length === 0">
+                  <td :colspan="classAttendanceStatus.dates.length + 4" class="px-4 py-8 text-center text-gray-500">
+                    Tidak ada data kelas
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -187,6 +241,7 @@ const loading = ref(false)
 const hasLoaded = ref(false)
 const pdfLoading = ref(false)
 const excelLoading = ref(false)
+const classPdfLoading = ref(false)
 
 const getStatusBadgeClass = (status) => {
   switch (status) {
@@ -287,6 +342,48 @@ const tableData = computed(() => {
   return {
     dates,
     students
+  };
+})
+
+const classAttendanceStatus = computed(() => {
+  const dates = getDatesBetween(filters.start_date, filters.end_date);
+  if (!dates || dates.length === 0) {
+    return { dates: [], classes: [] };
+  }
+
+  let filteredClasses = classes.value;
+  if (filters.class_id) {
+    filteredClasses = filteredClasses.filter(c => String(c.id) === String(filters.class_id));
+  }
+  
+  // Sort classes by name
+  const sortedClasses = [...filteredClasses].sort((a, b) => {
+    return (a.name || '').localeCompare(b.name || '', 'id');
+  });
+  
+  const result = sortedClasses.map(c => {
+    const classId = String(c.id);
+    const statusByDate = {};
+    dates.forEach(d => {
+      // Check if any record exists for this class and date
+      const hasRecord = records.value.some(r => {
+        const recordDate = r.attendance_date ? r.attendance_date.split('T')[0] : null;
+        const rClassId = String(r.class_info?.id || r.class_id);
+        return rClassId === classId && recordDate === d;
+      });
+      statusByDate[d] = hasRecord;
+    });
+    return {
+      class_info: c,
+      status: statusByDate,
+      total_filled: Object.values(statusByDate).filter(Boolean).length,
+      total_unfilled: Object.values(statusByDate).filter(v => !v).length
+    };
+  });
+  
+  return {
+    dates,
+    classes: result
   };
 })
 
@@ -725,6 +822,139 @@ const exportPDF = async () => {
     error('Gagal membuat PDF: ' + err.message)
   } finally {
     pdfLoading.value = false
+  }
+}
+
+const exportClassStatusPDF = async () => {
+  if (!classAttendanceStatus.value.classes.length) return
+  
+  classPdfLoading.value = true
+  
+  try {
+    const doc = new jsPDF(classAttendanceStatus.value.dates.length > 10 ? 'landscape' : 'portrait')
+    
+    // Header
+    doc.setFontSize(16)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(17, 24, 39)
+    doc.text('LAPORAN STATUS ABSENSI KELAS TAHFIDZ', doc.internal.pageSize.width / 2, 16, { align: 'center' })
+    
+    // Line separator
+    doc.setDrawColor(200, 200, 200)
+    doc.setLineWidth(0.5)
+    doc.line(14, 22, doc.internal.pageSize.width - 14, 22)
+    
+    // Metadata
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(75, 85, 99)
+    doc.text(`Periode  : ${formatDate(filters.start_date)} s/d ${formatDate(filters.end_date)}`, 14, 28)
+
+    // Data prep
+    const head = [['No', 'Kelas']]
+    classAttendanceStatus.value.dates.forEach(d => {
+      head[0].push(`${new Date(d).getDate()}/${new Date(d).getMonth() + 1}`)
+    })
+    head[0].push('Diabsen', 'Belum')
+
+    const body = []
+    classAttendanceStatus.value.classes.forEach((row, idx) => {
+      const rowData = [
+        idx + 1,
+        row.class_info.name
+      ]
+      
+      classAttendanceStatus.value.dates.forEach(date => {
+        rowData.push(row.status[date] ? 'Y' : 'N')
+      })
+      
+      rowData.push(row.total_filled)
+      rowData.push(row.total_unfilled)
+      
+      body.push(rowData)
+    })
+
+    autoTable(doc, {
+      head: head,
+      body: body,
+      startY: 34,
+      theme: 'grid',
+      styles: {
+        font: 'helvetica',
+        fontSize: 8,
+        halign: 'center',
+        valign: 'middle',
+        cellPadding: 2,
+        lineWidth: 0.1,
+        lineColor: [229, 231, 235],
+        textColor: [55, 65, 81]
+      },
+      headStyles: {
+        fillColor: [30, 58, 138], // blue-900
+        textColor: 255,
+        fontStyle: 'bold'
+      },
+      columnStyles: {
+        0: { cellWidth: 10 },
+        1: { halign: 'left', cellWidth: 35, fontStyle: 'bold', textColor: [17, 24, 39] }
+      },
+      didParseCell: function (data) {
+        if (data.section === 'body' && data.column.index > 1) {
+          const val = data.cell.raw
+          if (val === 'Y') {
+            data.cell.text = ['']
+          } else if (val === 'N') {
+            data.cell.text = ['X']
+            data.cell.styles.textColor = [220, 38, 38] // red-600
+            data.cell.styles.fontStyle = 'bold'
+          }
+          
+          if (data.column.index === head[0].length - 2) {
+            data.cell.styles.textColor = [22, 163, 74]
+            data.cell.styles.fillColor = [240, 253, 244]
+            data.cell.styles.fontStyle = 'bold'
+          } else if (data.column.index === head[0].length - 1) {
+            data.cell.styles.textColor = [220, 38, 38]
+            data.cell.styles.fillColor = [254, 242, 242]
+            data.cell.styles.fontStyle = 'bold'
+          }
+        }
+      },
+      didDrawCell: function (data) {
+        if (data.section === 'body' && data.column.index > 1 && data.column.index < head[0].length - 2) {
+          if (data.cell.raw === 'Y') {
+            const x = data.cell.x;
+            const y = data.cell.y;
+            const w = data.cell.width;
+            const h = data.cell.height;
+            
+            doc.setDrawColor(22, 163, 74); // green-600
+            doc.setLineWidth(0.4);
+            
+            const cx = x + w / 2;
+            const cy = y + h / 2;
+            
+            // Draw a checkmark using two lines
+            doc.line(cx - 1.2, cy + 0.2, cx - 0.2, cy + 1.2);
+            doc.line(cx - 0.2, cy + 1.2, cx + 1.5, cy - 1.2);
+          }
+        }
+      }
+    })
+
+    // Footer
+    const finalY = doc.lastAutoTable.finalY || 28
+    doc.setFontSize(8)
+    doc.setTextColor(100, 100, 100)
+    doc.text(`Dicetak pada: ${formatDate(new Date().toISOString().split('T')[0])}`, doc.internal.pageSize.width - 14, finalY + 8, { align: 'right' })
+
+    doc.save(`Status_Absen_Kelas_${filters.start_date}_${filters.end_date}.pdf`)
+    
+  } catch (err) {
+    console.error(err)
+    error('Gagal membuat PDF: ' + err.message)
+  } finally {
+    classPdfLoading.value = false
   }
 }
 
