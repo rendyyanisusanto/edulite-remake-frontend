@@ -41,23 +41,62 @@
             class="block w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary"
           />
         </div>
-        <div>
+        <div class="relative">
           <label class="block text-sm font-medium text-gray-700 mb-2">Kelas</label>
-          <select
-            v-model="filters.class_id"
-            class="block w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary"
+          <div 
+            @click="classDropdownOpen = !classDropdownOpen" 
+            class="block w-full cursor-pointer rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary flex justify-between items-center transition-colors hover:bg-gray-100"
           >
-            <option value="">Semua Kelas</option>
-            <option v-for="klass in classes" :key="klass.id" :value="String(klass.id)">
-              {{ klass.name }}
-            </option>
-          </select>
+            <span class="truncate pr-2 text-gray-700 font-medium">
+              {{ filters.class_id.length === 0 ? 'Semua Kelas' : filters.class_id.length + ' Kelas Terpilih' }}
+            </span>
+            <svg class="w-4 h-4 text-gray-400 transition-transform duration-200" :class="{'rotate-180': classDropdownOpen}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </div>
+
+          <!-- Dropdown menu -->
+          <div v-if="classDropdownOpen" class="absolute z-50 mt-2 w-full min-w-[200px] rounded-xl bg-white shadow-xl border border-gray-100 overflow-hidden">
+            <div class="max-h-60 overflow-y-auto custom-scrollbar p-1.5 relative z-50">
+              <div 
+                @click="filters.class_id = []" 
+                class="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                :class="{'bg-primary/5': filters.class_id.length === 0}"
+              >
+                <div class="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded border transition-colors" :class="filters.class_id.length === 0 ? 'bg-primary border-primary' : 'border-gray-300'">
+                  <svg v-if="filters.class_id.length === 0" class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                  </svg>
+                </div>
+                <span class="text-sm font-medium" :class="filters.class_id.length === 0 ? 'text-primary' : 'text-gray-700'">Semua Kelas</span>
+              </div>
+              
+              <div class="my-1 border-t border-gray-100"></div>
+
+              <div 
+                v-for="klass in classes" :key="klass.id" 
+                @click="toggleSelectClass(String(klass.id))"
+                class="flex items-center space-x-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                :class="{'bg-primary/5': filters.class_id.includes(String(klass.id))}"
+              >
+                <div class="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded border transition-colors" :class="filters.class_id.includes(String(klass.id)) ? 'bg-primary border-primary' : 'border-gray-300'">
+                  <svg v-if="filters.class_id.includes(String(klass.id))" class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                  </svg>
+                </div>
+                <span class="text-sm font-medium text-gray-700">{{ klass.name }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Invisible backdrop to close dropdown -->
+          <div v-if="classDropdownOpen" @click="classDropdownOpen = false" class="fixed inset-0 z-40"></div>
         </div>
         <div class="flex items-end">
           <BaseButton
             @click="loadRecap"
             :loading="loading"
-            class="w-full"
+            class="w-full h-[42px]"
           >
             <svg class="h-4 w-4 mr-1.5 inline-block -mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -213,6 +252,23 @@
   </div>
 </template>
 
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9; 
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1; 
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8; 
+}
+</style>
+
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { jsPDF } from 'jspdf'
@@ -231,7 +287,7 @@ const getToday = () => new Date().toISOString().split('T')[0]
 const filters = reactive({
   start_date: getToday(),
   end_date: getToday(),
-  class_id: ''
+  class_id: []
 })
 
 const classes = ref([])
@@ -242,6 +298,16 @@ const hasLoaded = ref(false)
 const pdfLoading = ref(false)
 const excelLoading = ref(false)
 const classPdfLoading = ref(false)
+const classDropdownOpen = ref(false)
+
+const toggleSelectClass = (id) => {
+  const index = filters.class_id.indexOf(id)
+  if (index === -1) {
+    filters.class_id.push(id)
+  } else {
+    filters.class_id.splice(index, 1)
+  }
+}
 
 const getStatusBadgeClass = (status) => {
   switch (status) {
@@ -352,8 +418,8 @@ const classAttendanceStatus = computed(() => {
   }
 
   let filteredClasses = classes.value;
-  if (filters.class_id) {
-    filteredClasses = filteredClasses.filter(c => String(c.id) === String(filters.class_id));
+  if (filters.class_id && filters.class_id.length > 0) {
+    filteredClasses = filteredClasses.filter(c => filters.class_id.includes(String(c.id)));
   }
   
   // Sort classes by name
@@ -410,7 +476,7 @@ const loadRecap = async () => {
     const response = await tahfidzAttendanceService.getRecap({
       start_date: filters.start_date,
       end_date: filters.end_date,
-      class_id: filters.class_id
+      class_id: filters.class_id.length > 0 ? filters.class_id.join(',') : ''
     })
 
     if (response.success) {
@@ -535,9 +601,9 @@ const exportPDF = async () => {
   
   try {
     let className = "Semua Kelas"
-    if (filters.class_id) {
-      const cls = classes.value.find(c => String(c.id) === String(filters.class_id))
-      if (cls) className = cls.name
+    if (filters.class_id && filters.class_id.length > 0) {
+      const selectedClasses = classes.value.filter(c => filters.class_id.includes(String(c.id)))
+      className = selectedClasses.map(c => c.name).join(', ')
     }
 
     const doc = new jsPDF('landscape')
