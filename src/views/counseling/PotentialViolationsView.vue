@@ -6,7 +6,15 @@
         <h1 class="text-2xl font-bold text-gray-800 tracking-tight">Potensi Pelanggaran</h1>
         <p class="text-sm text-gray-500 mt-1">Daftar siswa yang tidak hadir di absensi RFID dan Tahfidz pada tanggal tertentu.</p>
       </div>
-      <div>
+      <div class="flex items-center gap-3">
+        <BaseButton variant="outline" @click="exportExcel" class="shadow-sm bg-white" title="Ekspor ke Excel">
+          <svg class="w-4 h-4 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          Excel
+        </BaseButton>
+        <BaseButton variant="outline" @click="exportPdf" class="shadow-sm bg-white" title="Ekspor ke PDF">
+          <svg class="w-4 h-4 mr-2 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          PDF
+        </BaseButton>
         <BaseButton @click="openConvertModal" :disabled="selectedStudents.length === 0" class="shadow-sm">
           Konversi Pelanggaran ({{ selectedStudents.length }})
         </BaseButton>
@@ -196,9 +204,12 @@ import BaseModal from '@/components/modals/BaseModal.vue'
 import BaseInput from '@/components/forms/BaseInput.vue'
 import BaseSearchSelect from '@/components/forms/BaseSearchSelect.vue'
 import { studentViolationService, violationTypeService } from '@/services/api/violation.service'
-import classSetupService from '@/services/api/classSetup.service'
-import { academicYearService } from '@/services/api/academic.service'
+import { classService, academicYearService } from '@/services/api/academic.service'
 import { useToast } from '@/composables/useToast'
+import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
+import ExcelJS from 'exceljs'
+import { saveAs } from 'file-saver'
 
 const { success, error: showError } = useToast()
 
@@ -284,9 +295,9 @@ const toggleSelect = (id) => {
 
 const loadClasses = async () => {
   try {
-    const res = await classSetupService.getAll({ limit: 100 })
+    const res = await classService.getAll({ limit: 100 })
     if (res.success) {
-      classes.value = res.data.classes || []
+      classes.value = res.data?.classes || res.data || []
     }
   } catch (e) {
     console.error('Failed to load classes', e)
@@ -364,6 +375,109 @@ const openConvertModal = () => {
   form.status = 'PENDING'
   form.description = 'Dikonversi dari ketidakhadiran (Tanpa Keterangan)'
   showModal.value = true
+}
+
+const getExportData = async () => {
+  let genderParam = ''
+  if (selectedGenderL.value && selectedGenderP.value) {
+    genderParam = 'L,P'
+  } else if (selectedGenderL.value) {
+    genderParam = 'L'
+  } else if (selectedGenderP.value) {
+    genderParam = 'P'
+  }
+
+  try {
+    const res = await studentViolationService.getPotentialViolations({
+      date: selectedDate.value,
+      class_id: selectedClass.value,
+      gender: genderParam,
+      page: 1,
+      limit: 10000
+    })
+    
+    let exportItems = res.data?.data || []
+    
+    if (selectedStudents.value.length > 0) {
+      exportItems = exportItems.filter(item => selectedStudents.value.includes(item.id))
+    }
+    
+    return exportItems
+  } catch (e) {
+    console.error(e)
+    return []
+  }
+}
+
+const exportPdf = async () => {
+  try {
+    const data = await getExportData()
+    if (data.length === 0) return showError('Tidak ada data untuk diekspor')
+    
+    const doc = new jsPDF()
+    doc.setFontSize(16)
+    doc.text('Data Potensi Pelanggaran', 14, 15)
+    doc.setFontSize(10)
+    doc.text(`Tanggal: ${selectedDate.value}`, 14, 22)
+    
+    const tableData = data.map((item, idx) => [
+      idx + 1,
+      item.nis || '-',
+      item.full_name,
+      item.gender || '-',
+      item.class_name,
+      item.daily_status || 'Alpha',
+      item.tahfidz_status || 'Alpha'
+    ])
+    
+    autoTable(doc, {
+      startY: 28,
+      head: [['No', 'NIS', 'Nama Siswa', 'L/P', 'Kelas', 'Absen Harian', 'Absen Tahfidz']],
+      body: tableData
+    })
+    
+    doc.save(`potensi-pelanggaran-${selectedDate.value}.pdf`)
+  } catch (e) {
+    console.error(e)
+    showError('Gagal mengekspor PDF')
+  }
+}
+
+const exportExcel = async () => {
+  try {
+    const data = await getExportData()
+    if (data.length === 0) return showError('Tidak ada data untuk diekspor')
+    
+    const workbook = new ExcelJS.Workbook()
+    const sheet = workbook.addWorksheet('Potensi Pelanggaran')
+    
+    sheet.columns = [
+      { header: 'No', key: 'no', width: 5 },
+      { header: 'NIS', key: 'nis', width: 15 },
+      { header: 'Nama Siswa', key: 'name', width: 30 },
+      { header: 'L/P', key: 'gender', width: 10 },
+      { header: 'Kelas', key: 'class', width: 15 },
+      { header: 'Absen Harian', key: 'daily', width: 15 },
+      { header: 'Absen Tahfidz', key: 'tahfidz', width: 15 }
+    ]
+    
+    data.forEach((item, idx) => {
+      sheet.addRow({
+        no: idx + 1,
+        nis: item.nis || '-',
+        name: item.full_name,
+        gender: item.gender || '-',
+        class: item.class_name,
+        daily: item.daily_status || 'Alpha',
+        tahfidz: item.tahfidz_status || 'Alpha'
+      })
+    })
+    
+    const buffer = await workbook.xlsx.writeBuffer()
+    saveAs(new Blob([buffer]), `potensi-pelanggaran-${selectedDate.value}.xlsx`)
+  } catch (e) {
+    showError('Gagal mengekspor Excel')
+  }
 }
 
 const submitConversion = async () => {
