@@ -400,9 +400,9 @@ const tableData = computed(() => {
     // Group by class first, then sort by student name within each class
     const classA = a.class_info?.name || '';
     const classB = b.class_info?.name || '';
-    const classCompare = classA.localeCompare(classB, 'id');
+    const classCompare = classA.localeCompare(classB, 'id', { numeric: true });
     if (classCompare !== 0) return classCompare;
-    return (a.student?.full_name || '').localeCompare(b.student?.full_name || '', 'id');
+    return (a.student?.full_name || '').localeCompare(b.student?.full_name || '', 'id', { numeric: true });
   });
 
   return {
@@ -424,7 +424,7 @@ const classAttendanceStatus = computed(() => {
   
   // Sort classes by name
   const sortedClasses = [...filteredClasses].sort((a, b) => {
-    return (a.name || '').localeCompare(b.name || '', 'id');
+    return (a.name || '').localeCompare(b.name || '', 'id', { numeric: true });
   });
   
   const result = sortedClasses.map(c => {

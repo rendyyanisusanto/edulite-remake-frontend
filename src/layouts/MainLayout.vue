@@ -246,6 +246,7 @@ const staticMenuGroups = [
       { name: 'Rekap Absensi', route: '/attendance/recap', permission_code: 'attendance.view' },
       { name: 'Input Absensi', route: '/attendance/input', permission_code: 'attendance.create' },
       { name: 'Import Absensi', route: '/attendance/import', permission_code: 'attendance.import' },
+      { name: 'Laporan dan Statistik', route: '/attendance/statistics', permission_code: 'attendance.view' },
     ]
   },
   {

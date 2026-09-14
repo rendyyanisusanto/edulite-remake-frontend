@@ -36,6 +36,15 @@ class StudentAttendanceService {
   }
 
   /**
+   * Get attendance matrix recap report
+   * @param {Object} params - Query parameters (startDate, endDate, class_id, compare_tahfidz)
+   * @returns {Promise} API response with matrix data
+   */
+  getRecapMatrix(params) {
+    return api.get('/v1/student-attendances/reports/recap-matrix', { params })
+  }
+
+  /**
    * Upsert single attendance record
    * @param {Object} data - Attendance data
    * @returns {Promise} API response

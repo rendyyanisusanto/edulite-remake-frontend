@@ -59,7 +59,7 @@ const routes = [
                 path: 'attendance',
                 name: 'tahfidz-attendance',
                 component: () => import('@/views/tahfidz/Attendance.vue'),
-                meta: { 
+                meta: {
                     title: 'Absen Tahfidz',
                     permission: 'tahfidz_attendance.view'
                 }
@@ -68,7 +68,7 @@ const routes = [
                 path: 'recap',
                 name: 'tahfidz-recap',
                 component: () => import('@/views/tahfidz/Recap.vue'),
-                meta: { 
+                meta: {
                     title: 'Rekap Tahfidz',
                     permission: 'tahfidz_attendance.report'
                 }
@@ -77,7 +77,7 @@ const routes = [
                 path: 'kiosks',
                 name: 'tahfidz-kiosks',
                 component: () => import('@/views/tahfidz/KioskAdmin.vue'),
-                meta: { 
+                meta: {
                     title: 'Kiosk Tahfidz',
                     permission: 'tahfidz_attendance.report'
                 }
@@ -94,6 +94,15 @@ const routes = [
                 name: 'Dashboard',
                 component: () => import('@/views/dashboard/DashboardView.vue')
             },
+            // CBT
+            { path: 'cbt/dashboard', name: 'CbtDashboard', component: () => import('@/views/cbt/DashboardView.vue') },
+            { path: 'cbt/master/teacher-assignments', name: 'CbtTeacherAssignments', component: () => import('@/views/cbt/master/TeacherAssignmentsView.vue') },
+            { path: 'cbt/master/student-accounts', name: 'CbtStudentAccounts', component: () => import('@/views/cbt/master/StudentAccountsView.vue') },
+            // Parent: CBT Question Banks
+            { path: 'cbt/question-banks', name: 'CbtQuestionBanks', component: () => import('@/views/cbt/question-banks/QuestionBanksView.vue') },
+            { path: 'cbt/question-banks/:bankId/questions', name: 'CbtQuestionBankDetail', component: () => import('@/views/cbt/question-banks/QuestionBankDetailView.vue') },
+            { path: 'cbt/question-banks/:bankId/questions/create', name: 'CbtQuestionCreate', component: () => import('@/views/cbt/question-banks/QuestionEditorView.vue') },
+            { path: 'cbt/question-banks/:bankId/questions/:questionId/edit', name: 'CbtQuestionEdit', component: () => import('@/views/cbt/question-banks/QuestionEditorView.vue') },
             // Siswa
             { path: 'students', name: 'Students', component: () => import('@/views/students/StudentsView.vue') },
             { path: 'students/:id/character-report', name: 'CharacterReport', component: () => import('@/views/students/CharacterReportView.vue') },
@@ -179,6 +188,15 @@ const routes = [
             { path: 'attendance/recap', name: 'StudentAttendanceRecap', component: () => import('@/views/student-attendance/AttendanceRecapView.vue'), meta: { permissions: ['attendance.view'] } },
             { path: 'attendance/input', name: 'StudentAttendanceInput', component: () => import('@/views/student-attendance/AttendanceInputView.vue'), meta: { permissions: ['attendance.view'] } },
             { path: 'attendance/import', name: 'StudentAttendanceImport', component: () => import('@/views/student-attendance/AttendanceImportView.vue'), meta: { permissions: ['attendance.view', 'attendance.import'] } },
+            { path: 'attendance/statistics', name: 'StudentAttendanceStatistics', component: () => import('@/views/student-attendance/StatisticsView.vue'), meta: { permissions: ['attendance.view'] } },
+            // Laporan Absensi
+            { path: 'attendance-report/dashboard', name: 'AttendanceReportDashboard', component: () => import('@/views/attendance-report/DashboardView.vue'), meta: { permissions: ['attendance_report.view'] } },
+            { path: 'attendance-report/recap', name: 'AttendanceReportRecap', component: () => import('@/views/attendance-report/RecapView.vue'), meta: { permissions: ['attendance_report.view'] } },
+            { path: 'attendance-report/lateness', name: 'AttendanceReportLateness', component: () => import('@/views/attendance-report/LatenessView.vue'), meta: { permissions: ['attendance_report.view'] } },
+            { path: 'attendance-report/absence', name: 'AttendanceReportAbsence', component: () => import('@/views/attendance-report/AbsenceView.vue'), meta: { permissions: ['attendance_report.view'] } },
+            { path: 'attendance-report/student', name: 'AttendanceReportByStudent', component: () => import('@/views/attendance-report/ByStudentView.vue'), meta: { permissions: ['attendance_report.view'] } },
+            { path: 'attendance-report/class', name: 'AttendanceReportByClass', component: () => import('@/views/attendance-report/ByClassView.vue'), meta: { permissions: ['attendance_report.view'] } },
+            { path: 'attendance-report/at-risk', name: 'AttendanceReportAtRisk', component: () => import('@/views/attendance-report/AtRiskView.vue'), meta: { permissions: ['attendance_report.view'] } },
             // RFID Siswa
             { path: 'student-rfid/master/shifts', name: 'StudentAttendanceShiftMaster', component: () => import('@/views/student-rfid/StudentAttendanceShiftMasterView.vue') },
             { path: 'student-rfid/master/shift-classes', name: 'StudentAttendanceShiftClassMapping', component: () => import('@/views/student-rfid/StudentAttendanceShiftClassMappingView.vue') },
