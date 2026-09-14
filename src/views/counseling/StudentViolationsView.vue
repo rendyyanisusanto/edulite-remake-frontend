@@ -19,6 +19,12 @@
             Statistik
           </BaseButton>
         </router-link>
+        <router-link to="/student-violations/potential">
+          <BaseButton variant="outline" class="flex items-center gap-2 text-orange-600 border-orange-200 hover:bg-orange-50">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            Potensi Pelanggaran
+          </BaseButton>
+        </router-link>
         <BaseButton @click="openCreateModal">Catat Pelanggaran</BaseButton>
       </div>
     </div>
@@ -140,7 +146,7 @@ import schoolProfileService from '@/services/api/schoolProfile.service'
 import { useToast } from '@/composables/useToast'
 
 const { success, error: showError } = useToast()
-const items = ref([]); const typeOptions = ref([]); const loading = ref(false); const total = ref(0); const currentPage = ref(1); const limit = ref(10); const search = ref(''); const sortBy = ref('date'); const sortDesc = ref(true)
+const items = ref([]); const typeOptions = ref([]); const loading = ref(false); const total = ref(0); const currentPage = ref(1); const limit = ref(10); const search = ref(''); const sortBy = ref('id'); const sortDesc = ref(true)
 const showModal = ref(false); const showDeleteModal = ref(false); const isEditing = ref(false); const saving = ref(false); const deleting = ref(false); const currentItem = ref(null)
 const defaultForm = { student_id: '', student_name: '', type_id: '', type_name: '', date: new Date().toISOString().split('T')[0], location: '', description: '', status: 'PENDING', academic_year_id: '' }
 const form = reactive({ ...defaultForm })

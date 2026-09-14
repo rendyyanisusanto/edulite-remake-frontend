@@ -148,6 +148,7 @@ const routes = [
             { path: 'violation-levels', name: 'ViolationLevels', component: () => import('@/views/counseling/ViolationLevelsView.vue') },
             { path: 'student-violations', name: 'StudentViolations', component: () => import('@/views/counseling/StudentViolationsView.vue') },
             { path: 'student-violations/reports', name: 'StudentViolationsReports', component: () => import('@/views/counseling/StudentViolationsReportView.vue') },
+            { path: 'student-violations/potential', name: 'PotentialViolations', component: () => import('@/views/counseling/PotentialViolationsView.vue') },
             { path: 'student-violations/statistics', name: 'StudentViolationsStatistics', component: () => import('@/views/counseling/StudentViolationsStatisticsView.vue') },
             { path: 'student-violations/statistics/trend', name: 'StudentViolationsTrend', component: () => import('@/views/counseling/StudentViolationsTrendView.vue') },
             { path: 'student-violations/statistics/type', name: 'StudentViolationsType', component: () => import('@/views/counseling/StudentViolationsTypeView.vue') },

@@ -24,6 +24,8 @@ class StudentViolationService {
     delete(id) { return api.delete(`/violations/students/${id}`) }
     getTrendStatistics(params) { return api.get('/violations/students/statistics/trend', { params }) }
     getTypeStatistics(params) { return api.get('/violations/students/statistics/type', { params }) }
+    getPotentialViolations(params) { return api.get('/violations/students/potential', { params }) }
+    convertPotentialViolations(data) { return api.post('/violations/students/potential/convert', data) }
 }
 
 export const violationLevelService = new ViolationLevelService()
