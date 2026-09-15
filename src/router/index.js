@@ -46,6 +46,11 @@ const routes = [
         component: () => import('@/views/student-rfid/ManualKioskView.vue')
     },
     {
+        path: '/kiosk/leave-request',
+        name: 'LeaveRequestKiosk',
+        component: () => import('@/views/kiosk/LeaveRequestKioskView.vue')
+    },
+    {
         path: '/kiosk/tahfidz/:token',
         name: 'TahfidzKioskPublic',
         component: () => import('@/views/tahfidz/KioskPublic.vue')
@@ -162,6 +167,8 @@ const routes = [
             { path: 'counseling-cases/:caseId/sessions/create', name: 'CounselingSessionCreate', component: () => import('@/views/counseling/CounselingSessionFormView.vue') },
             { path: 'counseling-sessions/:id/edit', name: 'CounselingSessionEdit', component: () => import('@/views/counseling/CounselingSessionFormView.vue') },
             { path: 'counseling-followups', name: 'CounselingFollowups', component: () => import('@/views/counseling/CounselingFollowupsView.vue') },
+            { path: 'student-leave-requests', name: 'StudentLeaveRequests', component: () => import('@/views/counseling/StudentLeaveRequestsView.vue') },
+            { path: 'student-leave-requests/:id', name: 'StudentLeaveRequestDetail', component: () => import('@/views/counseling/StudentLeaveRequestDetailView.vue') },
             { path: 'character-reports', name: 'CharacterReports', component: () => import('@/views/students/CharacterReportIndexView.vue') },
 
             // Administrasi
