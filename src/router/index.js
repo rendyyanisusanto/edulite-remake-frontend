@@ -46,9 +46,13 @@ const routes = [
         component: () => import('@/views/student-rfid/ManualKioskView.vue')
     },
     {
-        path: '/kiosk/leave-request',
-        name: 'LeaveRequestKiosk',
-        component: () => import('@/views/kiosk/LeaveRequestKioskView.vue')
+        path: '/kiosk/student-permit',
+        name: 'KioskLeaveRequest',
+        component: () => import('@/views/kiosk/LeaveRequestKioskView.vue'),
+        meta: {
+            public: true,
+            layout: 'empty'
+        }
     },
     {
         path: '/kiosk/tahfidz/:token',
