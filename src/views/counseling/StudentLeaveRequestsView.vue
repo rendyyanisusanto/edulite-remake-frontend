@@ -6,6 +6,20 @@
         <h1 class="text-2xl font-bold text-gray-800">Perijinan Siswa</h1>
         <p class="text-sm text-gray-500 mt-1">Kelola data permohonan ijin dan sakit siswa.</p>
       </div>
+      <div class="flex items-center gap-2 w-full sm:w-auto">
+        <button @click="openCreateModal" class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary/90 text-white text-sm font-semibold rounded-xl shadow-sm hover:shadow-md transition-all">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          Tambah Ijin
+        </button>
+        <a href="/kiosk/leave-request" target="_blank" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-semibold rounded-xl shadow-sm transition-all">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+          Buka Kiosk
+        </a>
+      </div>
     </div>
 
     <!-- Filters -->
@@ -195,6 +209,61 @@
         <BaseButton @click="executeAction" :loading="isProcessingAction" :class="actionType === 'approved' ? 'bg-green-600 hover:bg-green-700 text-white border-transparent' : 'bg-red-600 hover:bg-red-700 text-white border-transparent'">Ya, Lanjutkan</BaseButton>
       </template>
     </BaseModal>
+
+    <!-- Create/Edit Form Modal -->
+    <BaseModal v-model="showFormModal" :title="isEdit ? 'Edit Perijinan' : 'Tambah Perijinan'" maxWidth="md">
+      <form @submit.prevent="submitForm" class="space-y-4 p-2">
+        <div v-if="!isEdit">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Siswa <span class="text-red-500">*</span></label>
+          <BaseSearchSelect
+            v-model="form.student_id"
+            placeholder="Cari nama atau NIS siswa..."
+            :fetch-options="fetchStudentOptions"
+            required
+          />
+        </div>
+        <div v-else>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Siswa</label>
+          <input type="text" :value="form.student_name" disabled class="block w-full rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-600 cursor-not-allowed" />
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Perijinan <span class="text-red-500">*</span></label>
+          <select v-model="form.leave_type" required class="block w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary">
+            <option value="" disabled>Pilih Jenis</option>
+            <option v-for="t in LEAVE_TYPES" :key="t.value" :value="t.value">{{ t.label }}</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Mulai <span class="text-red-500">*</span></label>
+            <input type="date" v-model="form.start_date" required class="block w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Selesai <span class="text-red-500">*</span></label>
+            <input type="date" v-model="form.end_date" :min="form.start_date" required class="block w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Alasan <span class="text-red-500">*</span></label>
+          <textarea v-model="form.reason" rows="3" required class="block w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Lampiran {{ isEdit ? '' : '(Wajib)' }}</label>
+          <input type="file" @change="handleFileUpload" accept=".jpg,.jpeg,.png,.pdf" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+          <p v-if="isEdit && existingAttachment && !selectedFile" class="mt-1 text-xs text-gray-500">
+            Ada lampiran tersimpan. Upload baru untuk mengganti.
+          </p>
+        </div>
+      </form>
+      <template #footer>
+        <BaseButton variant="outline" @click="showFormModal = false" class="mr-3" :disabled="saving">Batal</BaseButton>
+        <BaseButton @click="submitForm" :loading="saving">Simpan Data</BaseButton>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
@@ -208,6 +277,7 @@ import QRCode from 'qrcode'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseTable from '@/components/tables/BaseTable.vue'
 import BaseModal from '@/components/modals/BaseModal.vue'
+import BaseSearchSelect from '@/components/forms/BaseSearchSelect.vue'
 import studentLeaveRequestService from '@/services/api/studentLeaveRequest.service'
 import schoolProfileService from '@/services/api/schoolProfile.service'
 import { useToast } from '@/composables/useToast'
@@ -585,6 +655,16 @@ const openCreateModal = () => {
     reason: ''
   })
   showFormModal.value = true
+}
+
+const fetchStudentOptions = async (query) => {
+  try {
+    const res = await studentLeaveRequestService.searchStudentsPublic({ search: query, limit: 10, page: 1 })
+    if (res.success && res.data.students) {
+      return res.data.students.map(s => ({ value: s.id, label: s.full_name, description: `NIS: ${s.nis}` }))
+    }
+    return []
+  } catch (e) { return [] }
 }
 
 const openEditModal = async (item) => {
