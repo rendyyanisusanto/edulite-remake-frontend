@@ -34,6 +34,14 @@ class StudentService {
         });
     }
 
+    async getBulkCharacterReport(items, academicYearId = null) {
+        return api.post('/students/character-report/bulk/data', { items, academic_year_id: academicYearId || undefined });
+    }
+
+    async downloadBulkCharacterReportPdf(items, academicYearId = null, className = '') {
+        return api.post('/students/character-report/bulk/pdf', { items, academic_year_id: academicYearId || undefined, class_name: className }, { responseType: 'blob' });
+    }
+
     async downloadTemplate() {
         return api.get('/students/template', {
             responseType: 'blob'

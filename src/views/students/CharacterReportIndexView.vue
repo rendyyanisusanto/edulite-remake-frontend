@@ -5,6 +5,7 @@
         <h1 class="text-2xl font-bold text-gray-800">Cetak Rapor Karakter</h1>
         <p class="text-sm text-gray-500">Pilih siswa untuk melihat ringkasan prestasi dan pelanggarannya.</p>
       </div>
+      <BaseButton @click="openClassModal" :loading="loadingClass" :disabled="!selectedClass" :title="selectedClass ? '' : 'Pilih kelas terlebih dahulu pada filter'">Cetak / Export Per Kelas</BaseButton>
     </div>
 
     <!-- Filters -->
@@ -98,16 +99,42 @@
         </BaseButton>
       </template>
     </BaseModal>
+
+    <!-- Class Bulk Modal -->
+    <BaseModal v-model="showClassModal" :title="`Rapor Karakter Per Kelas - ${selectedClassName}`" maxWidth="3xl">
+      <div class="space-y-3">
+        <p class="text-xs text-gray-500">{{ classStudents.length }} siswa. Isi Catatan Pembinaan (opsional) untuk masing-masing siswa; kosongkan jika ingin ditulis tangan.</p>
+        <div class="max-h-[55vh] overflow-y-auto divide-y divide-gray-100 border border-gray-100 rounded-lg">
+          <div v-for="(s, i) in classStudents" :key="s.id" class="p-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div>
+              <p class="text-sm font-semibold text-gray-800">{{ i + 1 }}. {{ s.full_name }}</p>
+              <p class="text-xs text-gray-500">NIS: {{ s.nis || '-' }}</p>
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-medium text-gray-600 mb-1">Catatan Pembinaan (Opsional)</label>
+              <textarea v-model="classNotes[s.id]" rows="2" class="block w-full rounded-md border-gray-300 focus:border-primary focus:ring-primary sm:text-sm px-3 py-2 border bg-white/50" placeholder="Catatan untuk siswa ini..."></textarea>
+            </div>
+          </div>
+          <div v-if="!classStudents.length" class="p-6 text-center text-sm text-gray-500">Tidak ada siswa pada kelas ini.</div>
+        </div>
+      </div>
+      <template #footer>
+        <BaseButton variant="outline" @click="showClassModal = false" class="mr-3">Batal</BaseButton>
+        <BaseButton variant="outline" @click="printClassWeb" :loading="classAction === 'web'" :disabled="!classStudents.length || !!classAction" class="mr-3">Cetak Web</BaseButton>
+        <BaseButton @click="exportClassPdf" :loading="classAction === 'pdf'" :disabled="!classStudents.length || !!classAction">Export PDF</BaseButton>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import BaseTable from '@/components/tables/BaseTable.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseModal from '@/components/modals/BaseModal.vue'
 import studentService from '@/services/api/student.service'
 import { classService } from '@/services/api/academic.service'
+import { buildCharacterReportsHtml, printHtml } from '@/utils/characterReportHtml'
 import { useToast } from '@/composables/useToast'
 
 const { error: showError } = useToast()
@@ -204,6 +231,65 @@ const exportPdf = async () => {
     } finally {
         exporting.value = false
     }
+}
+
+// Class Bulk State
+const showClassModal = ref(false)
+const loadingClass = ref(false)
+const classStudents = ref([])
+const classNotes = ref({})
+const classAction = ref('')
+const selectedClassName = computed(() => classes.value.find(c => c.id === selectedClass.value)?.name || '')
+
+const openClassModal = async () => {
+  if (!selectedClass.value) return
+  loadingClass.value = true
+  try {
+    const res = await studentService.getAll({ class_id: selectedClass.value, limit: 200, page: 1, sortBy: 'full_name', sortDesc: false })
+    if (res.success) {
+      classStudents.value = [...res.data.students].sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''))
+      classNotes.value = {}
+      showClassModal.value = true
+    }
+  } catch (err) {
+    showError(err.message || 'Gagal mengambil data siswa kelas')
+  } finally {
+    loadingClass.value = false
+  }
+}
+
+const buildClassItems = () => classStudents.value.map(s => ({ student_id: s.id, notes: classNotes.value[s.id] || '' }))
+
+const printClassWeb = async () => {
+  classAction.value = 'web'
+  try {
+    const res = await studentService.getBulkCharacterReport(buildClassItems())
+    if (!printHtml(buildCharacterReportsHtml(res.data))) showError('Popup diblokir browser. Izinkan popup untuk mencetak.')
+  } catch (err) {
+    showError('Gagal menyiapkan dokumen cetak')
+  } finally {
+    classAction.value = ''
+  }
+}
+
+const exportClassPdf = async () => {
+  classAction.value = 'pdf'
+  try {
+    const response = await studentService.downloadBulkCharacterReportPdf(buildClassItems(), null, selectedClassName.value)
+    const url = window.URL.createObjectURL(new Blob([response]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `Rapor Karakter - ${selectedClassName.value}.pdf`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    showClassModal.value = false
+  } catch (err) {
+    showError('Gagal mengunduh dokumen PDF')
+  } finally {
+    classAction.value = ''
+  }
 }
 
 // Handlers
