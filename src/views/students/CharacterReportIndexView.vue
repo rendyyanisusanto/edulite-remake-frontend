@@ -103,15 +103,31 @@
     <!-- Class Bulk Modal -->
     <BaseModal v-model="showClassModal" :title="`Rapor Karakter Per Kelas - ${selectedClassName}`" maxWidth="3xl">
       <div class="space-y-3">
-        <p class="text-xs text-gray-500">{{ classStudents.length }} siswa. Isi Catatan Pembinaan (opsional) untuk masing-masing siswa; kosongkan jika ingin ditulis tangan.</p>
+        <p class="text-xs text-gray-500">{{ classStudents.length }} siswa akan dicetak (klik &times; untuk menghapus yang tidak perlu). Isi Catatan Pembinaan (opsional) untuk masing-masing siswa; kosongkan jika ingin ditulis tangan.</p>
         <div class="max-h-[55vh] overflow-y-auto divide-y divide-gray-100 border border-gray-100 rounded-lg">
           <div v-for="(s, i) in classStudents" :key="s.id" class="p-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
             <div>
-              <p class="text-sm font-semibold text-gray-800">{{ i + 1 }}. {{ s.full_name }}</p>
-              <p class="text-xs text-gray-500">NIS: {{ s.nis || '-' }}</p>
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <p class="text-sm font-semibold text-gray-800">{{ i + 1 }}. {{ s.full_name }}</p>
+                  <p class="text-xs text-gray-500">NIS: {{ s.nis || '-' }}</p>
+                </div>
+                <button type="button" @click="removeClassStudent(s.id)" title="Hapus dari daftar cetak" class="text-gray-400 hover:text-red-600 text-xl leading-none sm:hidden">&times;</button>
+              </div>
+              <div v-if="classSummaries[s.id]" class="mt-1.5 space-y-1">
+                <div class="flex flex-wrap gap-1 text-[11px] font-semibold">
+                  <span class="px-1.5 py-0.5 rounded bg-green-100 text-green-700">Prestasi +{{ classSummaries[s.id].summary.total_achievement_points }}</span>
+                  <span class="px-1.5 py-0.5 rounded bg-teal-100 text-teal-700">Positif +{{ classSummaries[s.id].summary.total_positive_points }}</span>
+                  <span class="px-1.5 py-0.5 rounded bg-red-100 text-red-700">Pelanggaran -{{ classSummaries[s.id].summary.total_violation_points }}</span>
+                  <span class="px-1.5 py-0.5 rounded bg-blue-100 text-blue-700">Nilai {{ classSummaries[s.id].summary.final_score }}</span>
+                </div>
+                <p v-if="classSummaries[s.id].positiveNotes.length" class="text-[11px] text-teal-700">Positif: {{ classSummaries[s.id].positiveNotes.map(x => x.type).join(', ') }}</p>
+                <p v-if="classSummaries[s.id].violations.length" class="text-[11px] text-red-700">Pelanggaran: {{ classSummaries[s.id].violations.map(x => x.type).join(', ') }}</p>
+              </div>
+              <p v-else-if="loadingSummary" class="text-[11px] text-gray-400 mt-1">Memuat poin...</p>
             </div>
             <div class="sm:col-span-2">
-              <label class="block text-xs font-medium text-gray-600 mb-1">Catatan Pembinaan (Opsional)</label>
+              <div class="flex items-center justify-between mb-1"><label class="block text-xs font-medium text-gray-600">Catatan Pembinaan (Opsional)</label><button type="button" @click="removeClassStudent(s.id)" class="hidden sm:inline text-xs text-red-500 hover:text-red-700">&times; Hapus dari cetak</button></div>
               <textarea v-model="classNotes[s.id]" rows="2" class="block w-full rounded-md border-gray-300 focus:border-primary focus:ring-primary sm:text-sm px-3 py-2 border bg-white/50" placeholder="Catatan untuk siswa ini..."></textarea>
             </div>
           </div>
@@ -241,6 +257,25 @@ const classNotes = ref({})
 const classAction = ref('')
 const selectedClassName = computed(() => classes.value.find(c => c.id === selectedClass.value)?.name || '')
 
+const classSummaries = ref({})
+const loadingSummary = ref(false)
+
+const loadSummaries = async () => {
+  loadingSummary.value = true
+  try {
+    const res = await studentService.getBulkCharacterReport(classStudents.value.map(s => ({ student_id: s.id })))
+    const map = {}
+    ;(res.data || []).forEach(e => { map[e.reportData.student.id] = e.reportData })
+    classSummaries.value = map
+  } catch (err) {
+    showError('Gagal memuat ringkasan poin siswa')
+  } finally {
+    loadingSummary.value = false
+  }
+}
+
+const removeClassStudent = (id) => { classStudents.value = classStudents.value.filter(s => s.id !== id) }
+
 const openClassModal = async () => {
   if (!selectedClass.value) return
   loadingClass.value = true
@@ -249,7 +284,9 @@ const openClassModal = async () => {
     if (res.success) {
       classStudents.value = [...res.data.students].sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''))
       classNotes.value = {}
+      classSummaries.value = {}
       showClassModal.value = true
+      loadSummaries()
     }
   } catch (err) {
     showError(err.message || 'Gagal mengambil data siswa kelas')
