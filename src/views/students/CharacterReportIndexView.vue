@@ -103,7 +103,7 @@
     <!-- Class Bulk Modal -->
     <BaseModal v-model="showClassModal" :title="`Rapor Karakter Per Kelas - ${selectedClassName}`" maxWidth="3xl">
       <div class="space-y-3">
-        <p class="text-xs text-gray-500">{{ classStudents.length }} siswa akan dicetak (klik &times; untuk menghapus yang tidak perlu). Isi Catatan Pembinaan (opsional) untuk masing-masing siswa; kosongkan jika ingin ditulis tangan.</p>
+        <p class="text-xs text-gray-500">{{ classStudents.length }} siswa akan dicetak (klik &times; untuk menghapus yang tidak perlu). Catatan Pembinaan terisi otomatis sebagai rekomendasi berdasarkan poin, pelanggaran, dan catatan positif; silakan edit sesuai kebutuhan.</p>
         <div class="max-h-[55vh] overflow-y-auto divide-y divide-gray-100 border border-gray-100 rounded-lg">
           <div v-for="(s, i) in classStudents" :key="s.id" class="p-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
             <div>
@@ -135,6 +135,7 @@
         </div>
       </div>
       <template #footer>
+        <BaseButton variant="outline" @click="regenerateNotes" :disabled="loadingSummary" class="mr-3">Buat Ulang Rekomendasi</BaseButton>
         <BaseButton variant="outline" @click="showClassModal = false" class="mr-3">Batal</BaseButton>
         <BaseButton variant="outline" @click="printClassWeb" :loading="classAction === 'web'" :disabled="!classStudents.length || !!classAction" class="mr-3">Cetak Web</BaseButton>
         <BaseButton @click="exportClassPdf" :loading="classAction === 'pdf'" :disabled="!classStudents.length || !!classAction">Export PDF</BaseButton>
@@ -260,6 +261,34 @@ const selectedClassName = computed(() => classes.value.find(c => c.id === select
 const classSummaries = ref({})
 const loadingSummary = ref(false)
 
+const joinList = (arr) => (arr.length > 1 ? `${arr.slice(0, -1).join(', ')} dan ${arr[arr.length - 1]}` : arr[0] || '')
+const uniqueTypes = (list, key, max = 3) => {
+  const counts = {}
+  list.forEach(x => { const k = x[key]; if (k && k !== '-') counts[k] = (counts[k] || 0) + 1 })
+  return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, max).map(([k, n]) => (n > 1 ? `${k} (${n}x)` : k))
+}
+
+const recommendNote = (d) => {
+  const name = d.student.name
+  const s = d.summary
+  if (!d.positiveNotes.length && !d.achievements.length && !d.violations.length) return 'Tidak ada catatan khusus.'
+  const parts = []
+  if (d.achievements.length) parts.push(`${name} telah menorehkan prestasi (${joinList(uniqueTypes(d.achievements, 'title'))}) dengan total ${s.total_achievement_points} poin.`)
+  if (d.positiveNotes.length) parts.push(`Ananda menunjukkan sikap positif, antara lain ${joinList(uniqueTypes(d.positiveNotes, 'type'))}, dengan total ${s.total_positive_points} poin.`)
+  if (d.violations.length) {
+    parts.push(`Tercatat ${d.violations.length} pelanggaran (${joinList(uniqueTypes(d.violations, 'type'))}) dengan total ${s.total_violation_points} poin.`)
+    parts.push(s.final_score >= 0
+      ? 'Ananda perlu terus dibina dan didampingi agar tidak mengulangi pelanggaran serta lebih konsisten menunjukkan sikap yang baik.'
+      : 'Ananda memerlukan pembinaan dan pendampingan intensif dari wali kelas, guru BK, dan orang tua agar pelanggaran tidak terulang.')
+  } else {
+    parts.push('Tidak ada catatan pelanggaran. Pertahankan dan tingkatkan sikap serta prestasi yang telah dicapai.')
+  }
+  return parts.join(' ')
+}
+
+const regenerateNotes = () => {
+  classStudents.value.forEach(s => { if (classSummaries.value[s.id]) classNotes.value[s.id] = recommendNote(classSummaries.value[s.id]) })
+}
 const loadSummaries = async () => {
   loadingSummary.value = true
   try {
@@ -267,6 +296,7 @@ const loadSummaries = async () => {
     const map = {}
     ;(res.data || []).forEach(e => { map[e.reportData.student.id] = e.reportData })
     classSummaries.value = map
+    classStudents.value.forEach(s => { if (map[s.id] && !(classNotes.value[s.id] || '').trim()) classNotes.value[s.id] = recommendNote(map[s.id]) })
   } catch (err) {
     showError('Gagal memuat ringkasan poin siswa')
   } finally {
