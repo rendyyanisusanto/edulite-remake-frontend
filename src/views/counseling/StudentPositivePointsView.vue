@@ -46,7 +46,24 @@
     <BaseModal v-model="showModal" :title="isEditing ? 'Edit Poin Positif' : 'Catat Poin Positif Baru'" maxWidth="xl">
       <form @submit.prevent="saveData" class="space-y-4">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="sm:col-span-2">
+          <div v-if="!isEditing" class="sm:col-span-2">
+            <BaseSearchSelect
+              v-model="studentPicker"
+              label="Pilih Siswa (bisa lebih dari satu)"
+              placeholder="Ketik nama siswa atau NIS lalu pilih..."
+              :fetch-options="fetchStudentOptions"
+              hide-selected-display
+              @change="addStudent"
+            />
+            <div v-if="selectedStudents.length" class="-mt-2 flex flex-wrap gap-2">
+              <span v-for="s in selectedStudents" :key="s.value" class="inline-flex items-center gap-1 rounded-full bg-blue-100 text-blue-800 text-xs px-2.5 py-1">
+                {{ s.label }}
+                <button type="button" @click="removeStudent(s.value)" class="hover:text-red-600">&times;</button>
+              </span>
+              <span class="text-xs text-gray-500 self-center">{{ selectedStudents.length }} siswa dipilih</span>
+            </div>
+          </div>
+          <div v-else class="sm:col-span-2">
             <BaseSearchSelect
               v-model="form.student_id"
               :initial-label="form.student_name"
@@ -111,7 +128,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import QRCode from 'qrcode'
@@ -135,6 +152,14 @@ const schoolProfile = ref(null)
 
 const defaultForm = { student_id: '', student_name: '', type_id: '', academic_year_id: '', date: new Date().toISOString().split('T')[0], points: 0, location: '', description: '', status: 'APPROVED' }
 const form = reactive({ ...defaultForm })
+const studentPicker = ref('')
+const selectedStudents = ref([])
+
+const addStudent = (opt) => {
+  if (opt && !selectedStudents.value.some(s => s.value === opt.value)) selectedStudents.value.push({ value: opt.value, label: opt.label })
+  nextTick(() => { studentPicker.value = '' })
+}
+const removeStudent = (id) => { selectedStudents.value = selectedStudents.value.filter(s => s.value !== id) }
 
 const columns = [
   { key: 'date', label: 'Tanggal', sortable: true },
@@ -215,6 +240,7 @@ const handleSort = (k) => { if (sortBy.value === k) sortDesc.value = !sortDesc.v
 const openCreateModal = () => { 
     isEditing.value = false; 
     currentItem.value = null; 
+    selectedStudents.value = []; studentPicker.value = '';
     for (const key in form) delete form[key];
     Object.assign(form, { ...defaultForm, date: new Date().toISOString().split('T')[0], academic_year_id: activeAcademicYearId.value }); 
     showModal.value = true 
@@ -231,11 +257,21 @@ const openEditModal = (item) => {
 const confirmDelete = (item) => { currentItem.value = item; showDeleteModal.value = true }
 
 const saveData = async () => { 
-  if (!form.student_id || !form.type_id || !form.date || !form.academic_year_id || form.points === null || form.points === undefined) return showError('Lengkapi form dengan benar!'); 
+  if (!isEditing.value && !selectedStudents.value.length) return showError('Pilih minimal satu siswa!');
+  if (isEditing.value && !form.student_id) return showError('Lengkapi form dengan benar!');
+  if (!form.type_id || !form.date || !form.academic_year_id || form.points === null || form.points === undefined) return showError('Lengkapi form dengan benar!'); 
   saving.value = true; 
   try { 
     if (isEditing.value) await studentPositivePointService.update(currentItem.value.id, form); 
-    else await studentPositivePointService.create(form); 
+    else {
+      const results = await Promise.allSettled(selectedStudents.value.map(s => studentPositivePointService.create({ ...form, student_id: s.value })))
+      const failed = selectedStudents.value.filter((_, i) => results[i].status === 'rejected')
+      if (failed.length) {
+        selectedStudents.value = failed
+        fetchData()
+        return showError(`Gagal menyimpan  siswa: ${failed.map(s => s.label).join(', ')}`)
+      }
+    }
     success('Data tersimpan'); 
     showModal.value = false; 
     fetchData() 
