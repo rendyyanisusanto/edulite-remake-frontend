@@ -7,11 +7,12 @@
       </div>
       <div class="flex items-center gap-2">
         <button v-if="selectedAcademicYear" @click="downloadAll" :disabled="downloadingAll" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-white text-sm hover:bg-primary/90 disabled:opacity-60">
-          <span v-if="downloadingAll" class="animate-spin">?</span>
+          <svg v-if="downloadingAll" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+          <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
           {{ downloadingAll ? 'Mendownload...' : 'Download Semua (ZIP)' }}
         </button>
         <button @click="refreshData" class="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-600 hover:text-primary hover:bg-primary/5">
-          <span :class="{ 'animate-spin': loading }">?</span>
+          <svg class="w-4 h-4" :class="{ 'animate-spin': loading }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5M5.6 15A8 8 0 0018.4 9M18.4 9L20 9M5.6 15L4 15"/></svg>
           Refresh
         </button>
       </div>
