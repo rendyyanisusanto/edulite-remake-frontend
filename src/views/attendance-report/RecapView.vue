@@ -255,7 +255,10 @@ const loadFiltersData = async () => {
     
     if (classesRes.success) classes.value = classesRes.data?.classes || []
     if (ayRes.success) {
-      academicYears.value = ayRes.data || []
+      const ayData = ayRes.data
+      academicYears.value = Array.isArray(ayData)
+        ? ayData
+        : (ayData?.academic_years || ayData?.academicYears || ayData?.rows || ayData?.items || ayData?.data || [])
       const activeAy = academicYears.value.find(ay => ay.is_active)
       if (activeAy) {
         filters.academicYearId = activeAy.id
@@ -394,21 +397,32 @@ const exportPdf = async () => {
     success('Menyiapkan dokumen PDF...')
     const html2pdf = (await import('html2pdf.js')).default
     
-    // Create a printable clone
-    const element = document.getElementById('recap-table-container').cloneNode(true)
-    
-    // Remove fixed heights and scrollbars from clone for PDF
-    element.className = 'w-full text-sm'
-    
-    // Create a container with title
+    // Build a plain table with inline hex colors (html2canvas can't parse Tailwind's oklch colors)
+    const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    const th = 'border:1px solid #999;padding:3px;background:#e5e7eb;font-size:9px;'
+    const td = 'border:1px solid #999;padding:3px;font-size:9px;text-align:center;'
+    const head = ['No', 'Nama Siswa', 'NIS', 'Kelas', ...matrixDates.value.map(d => formatDayNumber(d)), 'M', 'TM']
+      .map(h => `<th style="${th}">${esc(h)}</th>`).join('')
+    const body = matrixStudents.value.map((s, i) => {
+      const cells = matrixDates.value.map(d => {
+        const st = s.attendances[d] || '-'
+        return `<td style="${td}${st === 'HA' ? 'background:#fef08a;' : ''}">${esc(st)}</td>`
+      }).join('')
+      return `<tr><td style="${td}">${i + 1}</td><td style="${td}text-align:left;">${esc(s.full_name)}</td>` +
+        `<td style="${td}">${esc(s.nis)}</td><td style="${td}">${esc(s.class_name)}</td>${cells}` +
+        `<td style="${td}">${calculateTotal(s.attendances, ['H', 'HA'])}</td>` +
+        `<td style="${td}">${calculateTotal(s.attendances, ['I', 'S', 'A'])}</td></tr>`
+    }).join('')
+
     const container = document.createElement('div')
+    container.style.cssText = 'background:#ffffff;color:#000000;font-family:Arial,sans-serif;'
     container.innerHTML = `
       <div style="margin-bottom: 20px; text-align: center;">
         <h2 style="margin: 0; padding: 0;">Rekap Absensi Siswa</h2>
-        <p style="margin: 5px 0 0 0; color: #666;">Periode: ${matrixDates.value[0]} s/d ${matrixDates.value[matrixDates.value.length-1]}</p>
+        <p style="margin: 5px 0 0 0; color: #666666;">Periode: ${esc(matrixDates.value[0])} s/d ${esc(matrixDates.value[matrixDates.value.length-1])}</p>
       </div>
+      <table style="border-collapse:collapse;width:100%;"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>
     `
-    container.appendChild(element)
     
     const opt = {
       margin:       [10, 10, 10, 10],

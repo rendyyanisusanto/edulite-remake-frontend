@@ -92,12 +92,72 @@
 
             <div v-else-if="data" class="px-5 space-y-5 mt-1 flex-1">
                 
-                <!-- 1. Presensi Siswa -->
-                <section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <!-- KPI Hari Ini (tampilan satu hari) -->
+                <section v-if="isDaily" class="grid grid-cols-1 gap-4">
+                    <div class="rounded-2xl border p-5 shadow-sm" :class="schoolKpi.box">
+                        <div class="flex items-center justify-between">
+                            <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Kehadiran Sekolah</p>
+                            <span class="text-2xl">{{ schoolKpi.emoji }}</span>
+                        </div>
+                        <p class="text-2xl font-extrabold mt-1" :class="schoolKpi.text">{{ schoolKpi.label }}</p>
+                        <div class="mt-3 grid grid-cols-2 gap-3 text-sm">
+                            <div class="bg-white/70 rounded-xl px-3 py-2">
+                                <p class="text-[11px] text-slate-500">Jam Masuk</p>
+                                <p class="font-bold text-slate-800">{{ schoolAtt?.clock_in || '-' }}</p>
+                            </div>
+                            <div class="bg-white/70 rounded-xl px-3 py-2">
+                                <p class="text-[11px] text-slate-500">Jam Pulang</p>
+                                <p class="font-bold text-slate-800">{{ schoolAtt?.clock_out || '-' }}</p>
+                            </div>
+                        </div>
+                        <p v-if="schoolAtt?.late_minutes" class="text-xs text-amber-700 font-semibold mt-2">Terlambat {{ schoolAtt.late_minutes }} menit</p>
+                    </div>
+
+                    <div class="rounded-2xl border p-5 shadow-sm" :class="tahfidzKpi.box">
+                        <div class="flex items-center justify-between">
+                            <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Kehadiran Tahfidz</p>
+                            <span class="text-2xl">{{ tahfidzKpi.emoji }}</span>
+                        </div>
+                        <p class="text-2xl font-extrabold mt-1" :class="tahfidzKpi.text">{{ tahfidzKpi.label }}</p>
+                        <p v-if="tahfidzAtt?.time" class="text-sm text-slate-600 mt-1">Dicatat pukul <span class="font-bold">{{ tahfidzAtt.time }}</span></p>
+                        <p v-if="tahfidzAtt?.notes" class="text-xs text-slate-500 mt-1">{{ tahfidzAtt.notes }}</p>
+                    </div>
+                </section>
+
+                <!-- 1a. Presensi Harian (Attendance / RFID) -->
+                <section v-if="!isDaily" class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="px-5 py-3.5 border-b border-slate-100 bg-slate-50/50">
+                        <h2 class="font-bold text-slate-800 text-[15px]">
+                            Presensi Sekolah <span v-if="selectedFilter === 'last7days' || selectedFilter === 'month'" class="text-xs font-normal text-slate-500 ml-1">({{ selectedFilter === 'month' ? 'Bulan Ini' : '7 Hari Terakhir' }})</span>
+                        </h2>
+                    </div>
+                    <div v-if="data.daily_attendances && data.daily_attendances.length > 0" class="divide-y divide-slate-100">
+                        <div v-for="(att, i) in data.daily_attendances" :key="i" class="p-4 flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-semibold text-slate-800">{{ getFormattedDate(att.date) }}</p>
+                                <p class="text-xs text-slate-500 mt-0.5">
+                                    Masuk: {{ att.clock_in || '-' }} &bull; Pulang: {{ att.clock_out || '-' }}
+                                    <span v-if="att.late_minutes" class="text-amber-600"> &bull; Terlambat {{ att.late_minutes }} mnt</span>
+                                </p>
+                                <p v-if="att.notes" class="text-xs text-slate-500 mt-0.5">{{ att.notes }}</p>
+                            </div>
+                            <span class="text-[11px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider border"
+                                  :class="dailyStatusClass(att.status)">
+                                {{ dailyStatusLabel(att.status) }}
+                            </span>
+                        </div>
+                    </div>
+                    <div v-else class="text-center py-6">
+                        <p class="text-slate-400 text-sm">Belum ada data presensi sekolah.</p>
+                    </div>
+                </section>
+
+                <!-- 1b. Presensi Tahfidz -->
+                <section v-if="!isDaily" class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                     <div class="px-5 py-3.5 border-b border-slate-100 bg-slate-50/50">
                         <h2 class="font-bold text-slate-800 flex items-center gap-2 text-[15px]">
                             <svg class="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-                            Presensi Siswa <span v-if="selectedFilter === 'last7days'" class="text-xs font-normal text-slate-500 ml-1">(7 Hari Terakhir)</span>
+                            Presensi Tahfidz <span v-if="selectedFilter === 'last7days' || selectedFilter === 'month'" class="text-xs font-normal text-slate-500 ml-1">({{ selectedFilter === 'month' ? 'Bulan Ini' : '7 Hari Terakhir' }})</span>
                         </h2>
                     </div>
                     <div class="p-0">
@@ -146,7 +206,7 @@
                     <div class="px-5 py-3.5 border-b border-slate-100 bg-slate-50/50">
                         <h2 class="font-bold text-slate-800 flex items-center gap-2 text-[15px]">
                             <svg class="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            Timeline Aktivitas
+                            Histori Aktivitas
                         </h2>
                     </div>
                     <div class="p-5">
@@ -287,11 +347,44 @@ const timer = ref(null);
 const filters = [
     { label: 'Hari Ini', value: 'today' },
     { label: 'Kemarin', value: 'yesterday' },
-    { label: '7 Hari Terakhir', value: 'last7days' }
+    { label: '7 Hari Terakhir', value: 'last7days' },
+    { label: 'Bulan Ini', value: 'month' }
 ];
 
-const selectedFilter = ref('last7days');
+const selectedFilter = ref('today');
 const customDate = ref('');
+
+const isDaily = computed(() => !['last7days', 'month'].includes(selectedFilter.value));
+const schoolAtt = computed(() => data.value?.daily_attendances?.[0] || null);
+const tahfidzAtt = computed(() => data.value?.tahfidz_attendances?.[0] || null);
+
+const schoolKpi = computed(() => {
+    const a = schoolAtt.value;
+    if (a && a.clock_in) {
+        const late = a.entry_status === 'LATE' || a.late_minutes > 0;
+        return late
+            ? { label: 'Masuk (Terlambat)', emoji: '⏰', box: 'bg-amber-50 border-amber-200', text: 'text-amber-700' }
+            : { label: 'Sudah Masuk', emoji: '✅', box: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-700' };
+    }
+    const s = String(a?.status || '').toUpperCase();
+    if (['SICK', 'PERMIT', 'PERMISSION'].includes(s)) {
+        return { label: dailyStatusLabel(s), emoji: '📄', box: 'bg-blue-50 border-blue-200', text: 'text-blue-700' };
+    }
+    if (s === 'ABSENT') return { label: 'Tidak Masuk', emoji: '❌', box: 'bg-red-50 border-red-200', text: 'text-red-700' };
+    return { label: 'Belum Masuk', emoji: '⏳', box: 'bg-slate-50 border-slate-200', text: 'text-slate-600' };
+});
+
+const tahfidzKpi = computed(() => {
+    const a = tahfidzAtt.value;
+    if (!a) return { label: 'Belum Ada Presensi', emoji: '⏳', box: 'bg-slate-50 border-slate-200', text: 'text-slate-600' };
+    const map = {
+        present: { label: 'Hadir', emoji: '✅', box: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-700' },
+        permission: { label: 'Izin', emoji: '📄', box: 'bg-blue-50 border-blue-200', text: 'text-blue-700' },
+        sick: { label: 'Sakit', emoji: '🤒', box: 'bg-amber-50 border-amber-200', text: 'text-amber-700' },
+        absent: { label: 'Tidak Hadir', emoji: '❌', box: 'bg-red-50 border-red-200', text: 'text-red-700' }
+    };
+    return map[a.status] || { label: a.status, emoji: '•', box: 'bg-slate-50 border-slate-200', text: 'text-slate-600' };
+});
 
 // Computed values
 const studentPhoto = computed(() => {
@@ -323,6 +416,21 @@ const getStatusLabel = (status) => {
         default: return status;
     }
 };
+
+const dailyStatusLabel = (status) => ({
+    PRESENT: 'Hadir', LATE: 'Terlambat', INCOMPLETE: 'Belum Lengkap',
+    ABSENT: 'Alpa', SICK: 'Sakit', PERMIT: 'Izin', PERMISSION: 'Izin'
+}[String(status || '').toUpperCase()] || status || '-');
+
+const dailyStatusClass = (status) => ({
+    PRESENT: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    LATE: 'bg-amber-50 text-amber-700 border-amber-200',
+    INCOMPLETE: 'bg-slate-50 text-slate-600 border-slate-200',
+    ABSENT: 'bg-red-50 text-red-700 border-red-200',
+    SICK: 'bg-amber-50 text-amber-700 border-amber-200',
+    PERMIT: 'bg-blue-50 text-blue-700 border-blue-200',
+    PERMISSION: 'bg-blue-50 text-blue-700 border-blue-200'
+}[String(status || '').toUpperCase()] || 'bg-slate-50 text-slate-600 border-slate-200');
 
 const getTimelineIcon = (iconStr) => {
     // Map emoji strings back to nice SVG icons
@@ -358,7 +466,7 @@ const getDateParam = () => {
         const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
         return yesterday.toLocaleString('sv', { timeZone: 'Asia/Jakarta' }).split(' ')[0];
-    } else if (selectedFilter.value === 'last7days') {
+    } else if (selectedFilter.value === 'last7days' || selectedFilter.value === 'month') {
         return today.toLocaleString('sv', { timeZone: 'Asia/Jakarta' }).split(' ')[0];
     }
     
