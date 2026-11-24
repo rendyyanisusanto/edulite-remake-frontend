@@ -60,6 +60,15 @@ const routes = [
         component: () => import('@/views/tahfidz/KioskPublic.vue')
     },
     {
+        path: '/presensi-kelas/:token',
+        name: 'PublicLessonAttendance',
+        component: () => import('@/views/public/PublicLessonAttendanceView.vue'),
+        meta: {
+            public: true,
+            layout: 'empty'
+        }
+    },
+    {
         path: '/tahfidz',
         component: () => import('@/layouts/MainLayout.vue'),
         meta: { requiresAuth: true },
@@ -201,6 +210,55 @@ const routes = [
             { path: 'attendance/input', name: 'StudentAttendanceInput', component: () => import('@/views/student-attendance/AttendanceInputView.vue'), meta: { permissions: ['attendance.view'] } },
             { path: 'attendance/import', name: 'StudentAttendanceImport', component: () => import('@/views/student-attendance/AttendanceImportView.vue'), meta: { permissions: ['attendance.view', 'attendance.import'] } },
             { path: 'attendance/statistics', name: 'StudentAttendanceStatistics', component: () => import('@/views/student-attendance/StatisticsView.vue'), meta: { permissions: ['attendance.view'] } },
+            // Presensi Jam Pelajaran (Independent Module - LA-04)
+            {
+                path: 'presensi-jam-pelajaran',
+                name: 'LessonAttendanceRoot',
+                redirect: () => {
+                    const authStore = useAuthStore()
+                    if (authStore.hasPermission('lesson_attendance.monitoring.view')) return '/presensi-jam-pelajaran/monitoring'
+                    if (authStore.hasPermission('lesson_attendance.data.view')) return '/presensi-jam-pelajaran/data'
+                    if (authStore.hasPermission('lesson_attendance.daily_report.view')) return '/presensi-jam-pelajaran/laporan-harian-siswa'
+                    if (authStore.hasPermission('lesson_attendance.report.view')) return '/presensi-jam-pelajaran/laporan'
+                    return '/dashboard'
+                }
+            },
+            {
+                path: 'presensi-jam-pelajaran/monitoring',
+                name: 'LessonAttendanceMonitoring',
+                component: () => import('@/views/lesson-attendance/MonitoringView.vue'),
+                meta: {
+                    title: 'Monitoring Presensi Jam Pelajaran',
+                    permission: 'lesson_attendance.monitoring.view'
+                }
+            },
+            {
+                path: 'presensi-jam-pelajaran/data',
+                name: 'LessonAttendanceData',
+                component: () => import('@/views/lesson-attendance/DataView.vue'),
+                meta: {
+                    title: 'Data Presensi Jam Pelajaran',
+                    permission: 'lesson_attendance.data.view'
+                }
+            },
+            {
+                path: 'presensi-jam-pelajaran/laporan-harian-siswa',
+                name: 'LessonAttendanceDailyStudentReport',
+                component: () => import('@/views/lesson-attendance/DailyStudentReportView.vue'),
+                meta: {
+                    title: 'Laporan Harian Siswa',
+                    permission: 'lesson_attendance.daily_report.view'
+                }
+            },
+            {
+                path: 'presensi-jam-pelajaran/laporan',
+                name: 'LessonAttendanceReports',
+                component: () => import('@/views/lesson-attendance/ReportsView.vue'),
+                meta: {
+                    title: 'Laporan Presensi Jam Pelajaran',
+                    permission: 'lesson_attendance.report.view'
+                }
+            },
             // Laporan Absensi
             { path: 'attendance-report/dashboard', name: 'AttendanceReportDashboard', component: () => import('@/views/attendance-report/DashboardView.vue'), meta: { permissions: ['attendance_report.view'] } },
             { path: 'attendance-report/recap', name: 'AttendanceReportRecap', component: () => import('@/views/attendance-report/RecapView.vue'), meta: { permissions: ['attendance_report.view'] } },
@@ -248,6 +306,10 @@ router.beforeEach((to, from, next) => {
     if (to.meta.requiresAuth && !isAuthenticated) {
         next('/login')
     } else if (to.meta.guest && isAuthenticated) {
+        next('/dashboard')
+    } else if (isAuthenticated && to.meta?.permission && !authStore.hasPermission(to.meta.permission)) {
+        next('/dashboard')
+    } else if (isAuthenticated && Array.isArray(to.meta?.permissions) && to.meta.permissions.length > 0 && !authStore.hasAnyPermission(to.meta.permissions)) {
         next('/dashboard')
     } else {
         next()

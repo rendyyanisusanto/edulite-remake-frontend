@@ -92,6 +92,18 @@
 
             <div v-else-if="data" class="px-5 space-y-5 mt-1 flex-1">
                 
+                <!-- Kesimpulan Kehadiran Harian -->
+                <section v-if="isDaily && dailyConclusion" class="rounded-2xl border p-4 shadow-sm" :class="dailyConclusion.style">
+                    <div class="flex items-start gap-3">
+                        <span class="text-xl leading-none mt-0.5 shrink-0">{{ dailyConclusion.icon }}</span>
+                        <div class="min-w-0">
+                            <p class="text-[11px] font-bold uppercase tracking-wider opacity-75">Kesimpulan Kehadiran</p>
+                            <h3 class="text-sm font-extrabold mt-0.5">{{ dailyConclusion.title }}</h3>
+                            <p class="text-xs leading-relaxed mt-1 opacity-90">{{ dailyConclusion.message }}</p>
+                        </div>
+                    </div>
+                </section>
+
                 <!-- KPI Hari Ini (tampilan satu hari) -->
                 <section v-if="isDaily" class="grid grid-cols-1 gap-4">
                     <div class="rounded-2xl border p-5 shadow-sm" :class="schoolKpi.box">
@@ -192,12 +204,126 @@
                                 </span>
                             </div>
                         </div>
-                        <div v-else class="text-center py-6">
+                    <div v-else class="text-center py-6">
                             <div class="w-12 h-12 mx-auto bg-slate-50 rounded-full flex items-center justify-center mb-3">
                                 <svg class="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                             </div>
                             <p class="text-slate-400 text-sm">Belum ada data kehadiran Tahfidz.</p>
                         </div>
+                    </div>
+                </section>
+
+                <!-- 1c. Presensi Pelajaran (Per Jam Pel) -->
+                <section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="px-5 py-3.5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between gap-2">
+                        <h2 class="font-bold text-slate-800 flex items-center gap-2 text-[15px]">
+                            <svg class="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                            Presensi Pelajaran
+                            <span v-if="!isDaily" class="text-xs font-normal text-slate-500">({{ selectedFilter === 'month' ? 'Bulan Ini' : '7 Hari Terakhir' }})</span>
+                        </h2>
+                        <span v-if="lessonSummary.total > 0" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                            {{ lessonSummary.total }} Jam Pel
+                        </span>
+                    </div>
+
+                    <!-- Ringkasan Status Jam Pelajaran -->
+                    <div v-if="lessonSummary.total > 0" class="px-4 py-3 bg-slate-50/40 border-b border-slate-100 grid grid-cols-5 gap-1.5 text-center">
+                        <div class="rounded-lg bg-emerald-50 border border-emerald-100 py-1.5 px-1">
+                            <p class="text-[10px] font-semibold text-emerald-700 uppercase">Hadir</p>
+                            <p class="text-sm font-extrabold text-emerald-800">{{ lessonSummary.hadir }}</p>
+                        </div>
+                        <div class="rounded-lg bg-amber-50 border border-amber-100 py-1.5 px-1">
+                            <p class="text-[10px] font-semibold text-amber-700 uppercase">Telat</p>
+                            <p class="text-sm font-extrabold text-amber-800">{{ lessonSummary.terlambat }}</p>
+                        </div>
+                        <div class="rounded-lg bg-blue-50 border border-blue-100 py-1.5 px-1">
+                            <p class="text-[10px] font-semibold text-blue-700 uppercase">Izin</p>
+                            <p class="text-sm font-extrabold text-blue-800">{{ lessonSummary.izin }}</p>
+                        </div>
+                        <div class="rounded-lg bg-orange-50 border border-orange-100 py-1.5 px-1">
+                            <p class="text-[10px] font-semibold text-orange-700 uppercase">Sakit</p>
+                            <p class="text-sm font-extrabold text-orange-800">{{ lessonSummary.sakit }}</p>
+                        </div>
+                        <div class="rounded-lg bg-red-50 border border-red-100 py-1.5 px-1">
+                            <p class="text-[10px] font-semibold text-red-700 uppercase">Alpa</p>
+                            <p class="text-sm font-extrabold text-red-800">{{ lessonSummary.alpa }}</p>
+                        </div>
+                    </div>
+
+                    <div v-if="(isDaily && dailyLessonRows.length > 0) || (!isDaily && groupedLessonAttendances.length > 0)">
+                        <!-- Tampilan Harian -->
+                        <div v-if="isDaily" class="divide-y divide-slate-100">
+                            <div v-for="item in dailyLessonRows" :key="item.key" class="p-4 flex items-start justify-between gap-3 transition-colors" :class="item.hasRecord ? 'hover:bg-slate-50/70' : 'bg-slate-50/30'">
+                                <div class="flex items-start gap-3 min-w-0">
+                                    <div class="shrink-0 w-14 rounded-xl px-2 py-1.5 text-center border"
+                                         :class="item.hasRecord ? 'bg-indigo-50 border-indigo-100' : 'bg-slate-100 border-slate-200'">
+                                        <p class="text-[11px] font-extrabold leading-tight" :class="item.hasRecord ? 'text-indigo-700' : 'text-slate-500'">Jam {{ item.period_number }}</p>
+                                        <p class="text-[10px] font-medium mt-0.5" :class="item.hasRecord ? 'text-indigo-500' : 'text-slate-400'">{{ item.start_time }}</p>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p class="text-sm font-bold truncate" :class="item.hasRecord ? 'text-slate-800' : 'text-slate-400'">
+                                            {{ item.hasRecord ? item.subject_name : 'Belum ada presensi' }}
+                                        </p>
+                                        <p class="text-xs text-slate-500 mt-0.5 truncate">
+                                            <template v-if="item.hasRecord">{{ item.teacher_name }} &bull; {{ item.start_time }} - {{ item.end_time }}</template>
+                                            <template v-else>{{ item.start_time }} - {{ item.end_time }}</template>
+                                        </p>
+                                        <p v-if="item.notes" class="text-xs text-slate-500 italic mt-1">"{{ item.notes }}"</p>
+                                    </div>
+                                </div>
+                                <span v-if="item.hasRecord" class="shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider border"
+                                      :class="lessonStatusClass(item.status)">
+                                    {{ lessonStatusLabel(item.status) }}
+                                </span>
+                                <span v-else class="shrink-0 text-xs font-bold px-2.5 py-1 rounded-md border bg-slate-100 text-slate-400 border-slate-200" title="Belum ada presensi">
+                                    ✕
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Tampilan Rentang Tanggal (7 Hari / Bulan Ini) -->
+                        <div v-else class="divide-y divide-slate-200">
+                            <div v-for="group in groupedLessonAttendances" :key="group.date">
+                                <div class="px-4 py-2 bg-slate-50 text-xs font-bold text-slate-600 flex items-center justify-between">
+                                    <span>{{ getFormattedDate(group.date) }}</span>
+                                    <span class="text-[11px] font-semibold text-slate-400">{{ group.recordedCount }} jam pel</span>
+                                </div>
+                                <div class="divide-y divide-slate-100">
+                                    <div v-for="item in group.items" :key="item.key" class="px-4 py-3 flex items-start justify-between gap-3 transition-colors" :class="item.hasRecord ? 'hover:bg-slate-50/70' : 'bg-slate-50/30'">
+                                        <div class="flex items-start gap-3 min-w-0">
+                                            <div class="shrink-0 w-12 rounded-lg px-1.5 py-1 text-center border"
+                                                 :class="item.hasRecord ? 'bg-indigo-50 border-indigo-100' : 'bg-slate-100 border-slate-200'">
+                                                <p class="text-[11px] font-extrabold" :class="item.hasRecord ? 'text-indigo-700' : 'text-slate-500'">Jam {{ item.period_number }}</p>
+                                            </div>
+                                            <div class="min-w-0">
+                                                <p class="text-[13px] font-bold truncate" :class="item.hasRecord ? 'text-slate-800' : 'text-slate-400'">
+                                                    {{ item.hasRecord ? item.subject_name : 'Belum ada presensi' }}
+                                                </p>
+                                                <p class="text-[11px] text-slate-500 truncate">
+                                                    <template v-if="item.hasRecord">{{ item.teacher_name }} &bull; {{ item.start_time }} - {{ item.end_time }}</template>
+                                                    <template v-else>{{ item.start_time }} - {{ item.end_time }}</template>
+                                                </p>
+                                                <p v-if="item.notes" class="text-[11px] text-slate-500 italic mt-0.5">"{{ item.notes }}"</p>
+                                            </div>
+                                        </div>
+                                        <span v-if="item.hasRecord" class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider border"
+                                              :class="lessonStatusClass(item.status)">
+                                            {{ lessonStatusLabel(item.status) }}
+                                        </span>
+                                        <span v-else class="shrink-0 text-[11px] font-bold px-2 py-0.5 rounded-md border bg-slate-100 text-slate-400 border-slate-200" title="Belum ada presensi">
+                                            ✕
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-else class="text-center py-6">
+                        <div class="w-12 h-12 mx-auto bg-slate-50 rounded-full flex items-center justify-center mb-3">
+                            <svg class="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                        </div>
+                        <p class="text-slate-400 text-sm">Belum ada data presensi pelajaran.</p>
                     </div>
                 </section>
 
@@ -357,6 +483,160 @@ const customDate = ref('');
 const isDaily = computed(() => !['last7days', 'month'].includes(selectedFilter.value));
 const schoolAtt = computed(() => data.value?.daily_attendances?.[0] || null);
 const tahfidzAtt = computed(() => data.value?.tahfidz_attendances?.[0] || null);
+const lessonPeriods = computed(() => data.value?.lesson_periods || []);
+const lessonAttendances = computed(() => data.value?.lesson_attendances || []);
+const lessonSummary = computed(() => data.value?.lesson_summary || {
+    total: 0,
+    hadir: 0,
+    terlambat: 0,
+    izin: 0,
+    sakit: 0,
+    alpa: 0
+});
+
+const buildDayLessonRows = (dayItems = [], keyPrefix = 'day') => {
+    const byPeriod = new Map();
+    for (const item of dayItems) {
+        byPeriod.set(Number(item.period_number), item);
+    }
+
+    const rows = [];
+    const seenPeriods = new Set();
+
+    for (const p of lessonPeriods.value) {
+        const pNum = Number(p.period_number);
+        seenPeriods.add(pNum);
+        const match = byPeriod.get(pNum);
+        if (match) {
+            rows.push({ ...match, hasRecord: true, key: `${keyPrefix}-${pNum}-${match.id}` });
+        } else {
+            rows.push({
+                key: `${keyPrefix}-empty-${pNum}`,
+                period_number: pNum,
+                period_name: p.period_name,
+                start_time: p.start_time,
+                end_time: p.end_time,
+                hasRecord: false
+            });
+        }
+    }
+
+    for (const item of dayItems) {
+        const pNum = Number(item.period_number);
+        if (!seenPeriods.has(pNum)) {
+            rows.push({ ...item, hasRecord: true, key: `${keyPrefix}-extra-${pNum}-${item.id}` });
+        }
+    }
+
+    return rows.sort((a, b) => Number(a.period_number) - Number(b.period_number));
+};
+
+const dailyLessonRows = computed(() => buildDayLessonRows(lessonAttendances.value, 'daily'));
+
+const groupedLessonAttendances = computed(() => {
+    const groups = [];
+    const byDate = new Map();
+    for (const item of lessonAttendances.value) {
+        if (!byDate.has(item.date)) {
+            const group = { date: item.date, rawItems: [] };
+            byDate.set(item.date, group);
+            groups.push(group);
+        }
+        byDate.get(item.date).rawItems.push(item);
+    }
+    return groups.map(g => ({
+        date: g.date,
+        recordedCount: g.rawItems.length,
+        items: buildDayLessonRows(g.rawItems, g.date)
+    }));
+});
+
+const dailyConclusion = computed(() => {
+    if (!data.value || !isDaily.value) return null;
+
+    const gateStatus = String(schoolAtt.value?.status || '').toUpperCase();
+    const gatePresent = Boolean(schoolAtt.value && (schoolAtt.value.clock_in || ['PRESENT', 'LATE', 'INCOMPLETE'].includes(gateStatus)));
+    const gateExcused = Boolean(schoolAtt.value && ['SICK', 'PERMIT', 'PERMISSION'].includes(gateStatus));
+
+    const tahfidzStatus = tahfidzAtt.value?.status;
+    const tahfidzPresent = tahfidzStatus === 'present';
+    const tahfidzExcused = ['permission', 'sick'].includes(tahfidzStatus);
+    const tahfidzAbsent = tahfidzStatus === 'absent';
+
+    const lessonPresent = (lessonSummary.value.hadir + lessonSummary.value.terlambat) > 0;
+    const lessonAlpa = lessonSummary.value.alpa > 0;
+
+    if (!gatePresent && !gateExcused && lessonPresent && tahfidzPresent) {
+        return {
+            icon: '💳',
+            title: 'Tidak Tap Kartu RFID di Gerbang',
+            message: 'Ananda tercatat hadir di jam pelajaran dan kegiatan Tahfidz, namun belum melakukan tap kartu RFID di gerbang sekolah.',
+            style: 'bg-amber-50 border-amber-200 text-amber-900'
+        };
+    }
+
+    if (!gatePresent && !gateExcused && (lessonPresent || tahfidzPresent)) {
+        return {
+            icon: '💳',
+            title: 'Belum Presensi Kartu RFID di Gerbang',
+            message: lessonPresent
+                ? 'Ananda tercatat mengikuti jam pelajaran di kelas, namun belum melakukan tap kartu RFID di gerbang sekolah.'
+                : 'Ananda tercatat hadir di kegiatan Tahfidz, namun belum melakukan tap kartu RFID di gerbang sekolah.',
+            style: 'bg-amber-50 border-amber-200 text-amber-900'
+        };
+    }
+
+    if ((gatePresent || lessonPresent) && (tahfidzAbsent || (!tahfidzAtt.value && !tahfidzExcused))) {
+        if (tahfidzAbsent) {
+            return {
+                icon: '⚠️',
+                title: 'Tidak Mengikuti Kegiatan Tahfidz',
+                message: 'Ananda tercatat hadir di sekolah, namun tidak mengikuti kegiatan Tahfidz tanpa keterangan. Mohon perhatian dan konfirmasi kepada ananda.',
+                style: 'bg-rose-50 border-rose-200 text-rose-900'
+            };
+        }
+        return {
+            icon: '📋',
+            title: 'Tahfidz Belum Tercatat',
+            message: 'Ananda tercatat hadir di sekolah, namun belum memiliki catatan kehadiran pada kegiatan Tahfidz.',
+            style: 'bg-amber-50 border-amber-200 text-amber-900'
+        };
+    }
+
+    if (gatePresent && lessonAlpa) {
+        return {
+            icon: '⚠️',
+            title: 'Perlu Perhatian Jam Pelajaran',
+            message: `Ananda tercatat masuk gerbang sekolah, namun terdapat ${lessonSummary.value.alpa} jam pelajaran dengan status Alpa.`,
+            style: 'bg-rose-50 border-rose-200 text-rose-900'
+        };
+    }
+
+    if (gatePresent && tahfidzPresent) {
+        return {
+            icon: '✅',
+            title: 'Kehadiran Lengkap & Baik',
+            message: 'Ananda mengikuti presensi gerbang sekolah, kegiatan Tahfidz, dan pembelajaran dengan baik.',
+            style: 'bg-emerald-50 border-emerald-200 text-emerald-900'
+        };
+    }
+
+    if (gateExcused || tahfidzExcused) {
+        return {
+            icon: '📄',
+            title: 'Berhalangan Hadir (Izin / Sakit)',
+            message: 'Ananda tercatat izin atau sakit sesuai keterangan yang diterima sekolah.',
+            style: 'bg-blue-50 border-blue-200 text-blue-900'
+        };
+    }
+
+    return {
+        icon: '⏳',
+        title: 'Menunggu Data Kehadiran',
+        message: 'Belum ada catatan presensi gerbang, Tahfidz, maupun jam pelajaran pada tanggal ini.',
+        style: 'bg-slate-50 border-slate-200 text-slate-700'
+    };
+});
 
 const schoolKpi = computed(() => {
     const a = schoolAtt.value;
@@ -430,6 +710,22 @@ const dailyStatusClass = (status) => ({
     SICK: 'bg-amber-50 text-amber-700 border-amber-200',
     PERMIT: 'bg-blue-50 text-blue-700 border-blue-200',
     PERMISSION: 'bg-blue-50 text-blue-700 border-blue-200'
+}[String(status || '').toUpperCase()] || 'bg-slate-50 text-slate-600 border-slate-200');
+
+const lessonStatusLabel = (status) => ({
+    HADIR: 'Hadir',
+    TERLAMBAT: 'Terlambat',
+    IZIN: 'Izin',
+    SAKIT: 'Sakit',
+    ALPA: 'Alpa'
+}[String(status || '').toUpperCase()] || status || '-');
+
+const lessonStatusClass = (status) => ({
+    HADIR: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    TERLAMBAT: 'bg-amber-50 text-amber-700 border-amber-200',
+    IZIN: 'bg-blue-50 text-blue-700 border-blue-200',
+    SAKIT: 'bg-orange-50 text-orange-700 border-orange-200',
+    ALPA: 'bg-red-50 text-red-700 border-red-200'
 }[String(status || '').toUpperCase()] || 'bg-slate-50 text-slate-600 border-slate-200');
 
 const getTimelineIcon = (iconStr) => {

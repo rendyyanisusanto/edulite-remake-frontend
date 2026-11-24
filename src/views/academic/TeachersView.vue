@@ -41,12 +41,37 @@
         <span v-else class="text-gray-400 text-xs">-</span>
       </template>
 
+      <template #cell-attendance_pin="{ item }">
+        <span
+          v-if="item.attendance_pin_configured"
+          class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+        >
+          Aktif
+        </span>
+        <span
+          v-else
+          class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600"
+        >
+          Belum dibuat
+        </span>
+      </template>
+
       <template #cell-actions="{ item }">
-        <div class="flex items-center space-x-2">
-          <button @click="openEditModal(item)" class="text-blue-600 hover:text-blue-900 mx-1">
+        <div class="flex items-center justify-end space-x-2">
+          <button
+            v-if="canViewPin"
+            @click="openPinModal(item)"
+            title="Kelola PIN Presensi"
+            class="text-amber-600 hover:text-amber-800 mx-1"
+          >
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+            </svg>
+          </button>
+          <button @click="openEditModal(item)" title="Edit Guru" class="text-blue-600 hover:text-blue-900 mx-1">
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
           </button>
-          <button @click="confirmDelete(item)" class="text-red-600 hover:text-red-900 mx-1">
+          <button @click="confirmDelete(item)" title="Hapus Guru" class="text-red-600 hover:text-red-900 mx-1">
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
           </button>
         </div>
@@ -127,20 +152,34 @@
         <BaseButton variant="danger" @click="deleteData" :loading="deleting">Ya, Hapus</BaseButton>
       </template>
     </BaseModal>
+
+    <!-- Teacher Attendance PIN Modal -->
+    <TeacherAttendancePinModal
+      v-model="showPinModal"
+      :teacher="pinTeacher"
+      :can-manage="canManagePin"
+      @updated="handlePinUpdated"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseTable from '@/components/tables/BaseTable.vue'
 import BaseModal from '@/components/modals/BaseModal.vue'
 import BaseInput from '@/components/forms/BaseInput.vue'
 import AssetUpload from '@/components/school-profile/AssetUpload.vue'
+import TeacherAttendancePinModal from '@/components/modals/TeacherAttendancePinModal.vue'
 import { teacherService } from '@/services/api/academic.service'
+import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 
+const authStore = useAuthStore()
 const { success, error: showError } = useToast()
+
+const canViewPin = computed(() => authStore.hasAnyPermission(['lesson_attendance.teacher_pin.view', 'lesson_attendance.teacher_pin.manage']))
+const canManagePin = computed(() => authStore.hasPermission('lesson_attendance.teacher_pin.manage'))
 
 const teachers = ref([])
 const loading = ref(false)
@@ -162,13 +201,29 @@ const uploadingPhoto = ref(false)
 const defaultForm = { nip: '', full_name: '', gender: 'L', phone: '', email: '', password: '', photo: '' }
 const form = reactive({ ...defaultForm })
 
+const showPinModal = ref(false)
+const pinTeacher = ref(null)
+
+const openPinModal = (item) => {
+  pinTeacher.value = item
+  showPinModal.value = true
+}
+
+const handlePinUpdated = ({ teacherId, attendance_pin_configured }) => {
+  const row = teachers.value.find((t) => t.id === teacherId)
+  if (row) {
+    row.attendance_pin_configured = attendance_pin_configured
+  }
+}
+
 const columns = [
   { key: 'nip', label: 'NIP/NUPTK', sortable: true },
   { key: 'full_name', label: 'Nama Lengkap', sortable: true },
   { key: 'gender', label: 'L/P', sortable: true },
   { key: 'phone', label: 'No. HP', sortable: false },
   { key: 'user', label: 'Akun Login', sortable: false },
-  { key: 'actions', label: 'Aksi', sortable: false, class: 'w-24 text-right' }
+  { key: 'attendance_pin', label: 'PIN Presensi', sortable: false },
+  { key: 'actions', label: 'Aksi', sortable: false, class: 'w-28 text-right' }
 ]
 
 const fetchData = async () => {
