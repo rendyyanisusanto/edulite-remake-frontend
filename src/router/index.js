@@ -219,6 +219,7 @@ const routes = [
                     if (authStore.hasPermission('lesson_attendance.monitoring.view')) return '/presensi-jam-pelajaran/monitoring'
                     if (authStore.hasPermission('lesson_attendance.data.view')) return '/presensi-jam-pelajaran/data'
                     if (authStore.hasPermission('lesson_attendance.daily_report.view')) return '/presensi-jam-pelajaran/laporan-harian-siswa'
+                    if (authStore.hasPermission('lesson_attendance.integrated_daily_report.view')) return '/presensi-jam-pelajaran/laporan-harian-terpadu'
                     if (authStore.hasPermission('lesson_attendance.report.view')) return '/presensi-jam-pelajaran/laporan'
                     return '/dashboard'
                 }
@@ -248,6 +249,15 @@ const routes = [
                 meta: {
                     title: 'Laporan Harian Siswa',
                     permission: 'lesson_attendance.daily_report.view'
+                }
+            },
+            {
+                path: 'presensi-jam-pelajaran/laporan-harian-terpadu',
+                name: 'lesson-attendance-integrated-daily-report',
+                component: () => import('@/views/lesson-attendance/IntegratedDailyReportView.vue'),
+                meta: {
+                    title: 'Laporan Harian Terpadu',
+                    permission: 'lesson_attendance.integrated_daily_report.view'
                 }
             },
             {

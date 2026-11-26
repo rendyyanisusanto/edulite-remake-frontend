@@ -173,6 +173,31 @@ class LessonAttendanceService {
             timeout: 60000
         })
     }
+
+    // Admin — LA-06 Integrated Daily Report (gate + Tahfidz + lesson attendance)
+    getIntegratedDailyReport(params = {}) {
+        return api.get('/lesson-attendance/reports/integrated-daily', { params, timeout: 45000 })
+    }
+
+    getIntegratedDailyScope() {
+        return api.get('/lesson-attendance/reports/integrated-daily/scope')
+    }
+
+    exportIntegratedDailyExcel(params = {}) {
+        return api.get('/lesson-attendance/reports/integrated-daily/export/excel', {
+            params,
+            responseType: 'blob',
+            timeout: 90000
+        })
+    }
+
+    exportIntegratedDailyPdf(params = {}) {
+        return api.get('/lesson-attendance/reports/integrated-daily/export/pdf', {
+            params,
+            responseType: 'blob',
+            timeout: 90000
+        })
+    }
 }
 
 export const lessonAttendanceService = new LessonAttendanceService()
