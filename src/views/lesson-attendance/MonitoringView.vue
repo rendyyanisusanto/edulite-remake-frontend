@@ -17,6 +17,14 @@
         <div class="flex items-center gap-2">
           <button
             type="button"
+            @click="handleExportPdf"
+            :disabled="loading || exportingPdf || !monitoring"
+            class="px-3 py-2 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+          >
+            {{ exportingPdf ? 'Menyiapkan PDF...' : 'Cetak PDF' }}
+          </button>
+          <button
+            type="button"
             @click="refreshSilent"
             :disabled="loading || refreshing"
             class="px-3 py-2 text-sm font-medium bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center gap-1.5 disabled:opacity-50"
@@ -347,6 +355,7 @@ const filters = reactive({
 
 const loading = ref(true)
 const refreshing = ref(false)
+const exportingPdf = ref(false)
 const errorMsg = ref('')
 const monitoring = ref(null)
 
@@ -415,6 +424,55 @@ const fetchMonitoring = async (silent = false) => {
 
 const applyFilters = () => fetchMonitoring(false)
 const refreshSilent = () => fetchMonitoring(true)
+
+const handleExportPdf = async () => {
+  if (!monitoring.value || exportingPdf.value) return
+  exportingPdf.value = true
+  try {
+    const params = {}
+    if (filters.attendance_date) params.attendance_date = filters.attendance_date
+    if (filters.academic_year_id) params.academic_year_id = filters.academic_year_id
+    if (filters.grade_id) params.grade_id = filters.grade_id
+    if (filters.department_id) params.department_id = filters.department_id
+    if (filters.class_id) params.class_id = filters.class_id
+    if (filters.status) params.status = filters.status
+    if (filters.search.trim()) params.search = filters.search.trim()
+
+    const res = await lessonAttendanceService.exportMonitoringPdf(params)
+    const fallbackName = `Monitoring-Presensi-Jam-Pelajaran-${monitoring.value.attendance_date || 'hari-ini'}.pdf`
+    let blob
+    let filename = fallbackName
+    if (res instanceof Blob) {
+      blob = res
+    } else {
+      const m = (res?.headers?.['content-disposition'] || '').match(/filename="?([^"]+)"?/i)
+      if (m?.[1]) filename = m[1]
+      blob = res?.data instanceof Blob ? res.data : new Blob([res?.data ?? res], { type: 'application/pdf' })
+    }
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(url)
+    toast.success('Export PDF monitoring berhasil diunduh.')
+  } catch (err) {
+    let msg = 'Gagal mencetak PDF monitoring.'
+    const errBlob = err instanceof Blob ? err : (err?.response?.data instanceof Blob ? err.response.data : null)
+    if (errBlob) {
+      try { msg = JSON.parse(await errBlob.text()).message || msg } catch { /* keep default */ }
+    } else if (err?.response?.data?.message) {
+      msg = err.response.data.message
+    } else if (err?.message) {
+      msg = err.message
+    }
+    toast.error(msg)
+  } finally {
+    exportingPdf.value = false
+  }
+}
 
 const resetFilters = () => {
   filters.attendance_date = lookups.value.server_date

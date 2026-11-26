@@ -83,6 +83,14 @@ class LessonAttendanceService {
         return api.get('/lesson-attendance/monitoring', { params })
     }
 
+    exportMonitoringPdf(params = {}) {
+        return api.get('/lesson-attendance/monitoring/export/pdf', {
+            params,
+            responseType: 'blob',
+            timeout: 60000
+        })
+    }
+
     // Admin — LA-04 Transaction Management
     listSessions(params = {}) {
         return api.get('/lesson-attendance/sessions', { params })
