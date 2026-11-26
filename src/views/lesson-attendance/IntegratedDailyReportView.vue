@@ -591,10 +591,29 @@ const handleExport = async (type) => {
   else exportingPdf.value = true
   try {
     const params = requestParams(applied.value) // last applied filters only; never quick filter/search
-    const res = isExcel ? await lessonAttendanceService.exportIntegratedDailyExcel(params) : await lessonAttendanceService.exportIntegratedDailyPdf(params)
-    const m = (res.headers['content-disposition'] || '').match(/filename="?([^"]+)"?/i)
-    const filename = m?.[1] || `Laporan-Harian-Terpadu-${applied.value.attendance_date}.${isExcel ? 'xlsx' : 'pdf'}`
-    const url = window.URL.createObjectURL(new Blob([res.data], { type: res.headers['content-type'] }))
+    const res = isExcel
+      ? await lessonAttendanceService.exportIntegratedDailyExcel(params)
+      : await lessonAttendanceService.exportIntegratedDailyPdf(params)
+
+    const classSlug = String(report.value?.class?.name || 'Kelas')
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-zA-Z0-9_-]/g, '')
+    const fallbackName = `Laporan-Harian-Terpadu-${classSlug || 'Kelas'}-${applied.value.attendance_date}.${isExcel ? 'xlsx' : 'pdf'}`
+
+    let blob
+    let filename = fallbackName
+    if (res instanceof Blob) {
+      blob = res
+    } else {
+      const m = (res?.headers?.['content-disposition'] || '').match(/filename="?([^"]+)"?/i)
+      if (m?.[1]) filename = m[1]
+      blob = res?.data instanceof Blob
+        ? res.data
+        : new Blob([res?.data ?? res], { type: res?.headers?.['content-type'] || (isExcel ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'application/pdf') })
+    }
+
+    const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
     a.download = filename
@@ -605,9 +624,14 @@ const handleExport = async (type) => {
     toast.success(`Export ${isExcel ? 'Excel' : 'PDF'} berhasil diunduh.`)
   } catch (err) {
     let msg = `Gagal export ${isExcel ? 'Excel' : 'PDF'}.`
-    if (err.response?.data instanceof Blob) {
-      try { msg = JSON.parse(await err.response.data.text()).message || msg } catch { /* keep default */ }
-    } else if (err.response?.data?.message) msg = err.response.data.message
+    const errBlob = err instanceof Blob ? err : (err?.response?.data instanceof Blob ? err.response.data : null)
+    if (errBlob) {
+      try { msg = JSON.parse(await errBlob.text()).message || msg } catch { /* keep default */ }
+    } else if (err?.response?.data?.message) {
+      msg = err.response.data.message
+    } else if (err?.message) {
+      msg = err.message
+    }
     toast.error(msg)
   } finally {
     exportingExcel.value = false
