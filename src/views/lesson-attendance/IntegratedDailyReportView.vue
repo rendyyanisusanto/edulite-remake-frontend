@@ -328,8 +328,28 @@
     </BaseModal>
 
     <!-- PDF Print Options Modal -->
-    <BaseModal v-model="pdfModalOpen" maxWidth="md" title="Opsi Cetak PDF">
+    <BaseModal v-model="pdfModalOpen" maxWidth="lg" title="Opsi Cetak PDF">
       <div class="space-y-3 text-xs">
+        <div class="space-y-1.5">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span class="font-semibold text-gray-800">Pilih Kelas yang Dicetak ({{ pdfClassIds.length }} dipilih, dikelompokkan per kelas)</span>
+            <div class="flex items-center gap-2 text-[11px]">
+              <button type="button" @click="selectAllPdfClasses" class="text-primary hover:underline">Pilih Semua</button>
+              <span class="text-gray-300">|</span>
+              <button type="button" @click="selectCurrentPdfClass" class="text-primary hover:underline">Kelas Ini Saja</button>
+              <span class="text-gray-300">|</span>
+              <button type="button" @click="pdfClassIds = []" class="text-gray-500 hover:underline">Kosongkan</button>
+            </div>
+          </div>
+          <div class="max-h-40 overflow-y-auto bg-gray-50 p-2.5 rounded-lg border border-gray-200 grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+            <label v-for="c in scopedClasses" :key="c.id" class="flex items-center gap-1.5 cursor-pointer text-gray-800 truncate" :title="c.name">
+              <input type="checkbox" :value="Number(c.id)" v-model="pdfClassIds" class="rounded text-primary focus:ring-primary" />
+              <span class="truncate">{{ c.name }}</span>
+            </label>
+          </div>
+          <p v-if="pdfClassIds.length === 0" class="text-red-600 font-medium">Pilih minimal satu kelas untuk dicetak.</p>
+        </div>
+
         <p class="text-gray-600">Pilih bagian laporan yang ingin disertakan pada hasil cetak PDF:</p>
         <div class="space-y-2 bg-gray-50 p-3 rounded-lg border border-gray-200">
           <label class="flex items-center gap-2 cursor-pointer font-medium text-gray-800">
@@ -360,9 +380,9 @@
       <template #footer>
         <div class="flex justify-end gap-2 w-full">
           <button type="button" @click="pdfModalOpen = false" class="px-3 py-1.5 text-sm font-medium bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">Batal</button>
-          <button type="button" @click="confirmPdfExport" :disabled="!hasSelectedPdfSection || exportingPdf"
+          <button type="button" @click="confirmPdfExport" :disabled="!hasSelectedPdfSection || pdfClassIds.length === 0 || exportingPdf"
             class="px-4 py-1.5 text-sm font-medium bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50">
-            {{ exportingPdf ? 'Menyiapkan PDF...' : 'Cetak PDF' }}
+            {{ exportingPdf ? 'Menyiapkan PDF...' : `Cetak PDF (${pdfClassIds.length} Kelas)` }}
           </button>
         </div>
       </template>
@@ -409,6 +429,7 @@ const findingStudent = ref(null)
 const sessionModalOpen = ref(false)
 const activeSessionId = ref(null)
 const pdfModalOpen = ref(false)
+const pdfClassIds = ref([])
 const pdfOptions = reactive({
   include_kop: true,
   include_matrix: true,
@@ -427,8 +448,11 @@ const maxDate = computed(() => {
   const today = lookups.value.server_date
   return end && today && end < today ? end : today
 })
-const filteredClasses = computed(() => (lookups.value.classes || []).filter((c) => {
-  if (!scope.value.all_classes && !scope.value.class_ids.includes(Number(c.id))) return false
+const scopedClasses = computed(() => (lookups.value.classes || [])
+  .filter((c) => scope.value.all_classes || scope.value.class_ids.includes(Number(c.id)))
+  .slice()
+  .sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'id')))
+const filteredClasses = computed(() => scopedClasses.value.filter((c) => {
   if (draft.grade_id && Number(c.grade_id) !== Number(draft.grade_id)) return false
   if (draft.department_id && Number(c.department_id) !== Number(draft.department_id)) return false
   return true
@@ -638,13 +662,24 @@ const resetFilters = () => {
 
 const openPdfModal = () => {
   if (!canExport.value) return
+  if (applied.value?.class_id) {
+    pdfClassIds.value = [Number(applied.value.class_id)]
+  }
   pdfModalOpen.value = true
 }
 
+const selectAllPdfClasses = () => {
+  pdfClassIds.value = scopedClasses.value.map((c) => Number(c.id))
+}
+
+const selectCurrentPdfClass = () => {
+  pdfClassIds.value = applied.value?.class_id ? [Number(applied.value.class_id)] : []
+}
+
 const confirmPdfExport = async () => {
-  if (!hasSelectedPdfSection.value) return
+  if (!hasSelectedPdfSection.value || pdfClassIds.value.length === 0) return
   pdfModalOpen.value = false
-  await handleExport('pdf', { ...pdfOptions })
+  await handleExport('pdf', { ...pdfOptions, class_ids: pdfClassIds.value.join(',') })
 }
 
 const handleExport = async (type, extraParams = {}) => {
@@ -662,7 +697,10 @@ const handleExport = async (type, extraParams = {}) => {
       .trim()
       .replace(/\s+/g, '-')
       .replace(/[^a-zA-Z0-9_-]/g, '')
-    const fallbackName = `Laporan-Harian-Terpadu-${classSlug || 'Kelas'}-${applied.value.attendance_date}.${isExcel ? 'xlsx' : 'pdf'}`
+    const multiCount = extraParams.class_ids ? String(extraParams.class_ids).split(',').filter(Boolean).length : 1
+    const fallbackName = multiCount > 1
+      ? `Laporan-Harian-Terpadu-${multiCount}-Kelas-${applied.value.attendance_date}.${isExcel ? 'xlsx' : 'pdf'}`
+      : `Laporan-Harian-Terpadu-${classSlug || 'Kelas'}-${applied.value.attendance_date}.${isExcel ? 'xlsx' : 'pdf'}`
 
     let blob
     let filename = fallbackName
