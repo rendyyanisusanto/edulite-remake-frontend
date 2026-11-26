@@ -19,7 +19,7 @@
             class="px-3 py-2 text-sm font-medium bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50">
             {{ exportingExcel ? 'Mengunduh Excel...' : 'Excel' }}
           </button>
-          <button v-if="canExportPdf" type="button" @click="handleExport('pdf')" :disabled="!canExport || exportingPdf"
+          <button v-if="canExportPdf" type="button" @click="openPdfModal" :disabled="!canExport || exportingPdf"
             class="px-3 py-2 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
             {{ exportingPdf ? 'Menyiapkan PDF...' : 'Cetak PDF' }}
           </button>
@@ -327,6 +327,47 @@
       </template>
     </BaseModal>
 
+    <!-- PDF Print Options Modal -->
+    <BaseModal v-model="pdfModalOpen" maxWidth="md" title="Opsi Cetak PDF">
+      <div class="space-y-3 text-xs">
+        <p class="text-gray-600">Pilih bagian laporan yang ingin disertakan pada hasil cetak PDF:</p>
+        <div class="space-y-2 bg-gray-50 p-3 rounded-lg border border-gray-200">
+          <label class="flex items-center gap-2 cursor-pointer font-medium text-gray-800">
+            <input type="checkbox" v-model="pdfOptions.include_kop" class="rounded text-primary focus:ring-primary" />
+            <span>Kop Sekolah</span>
+          </label>
+          <div class="border-t border-gray-200 pt-2 space-y-2">
+            <label class="flex items-center gap-2 cursor-pointer text-gray-800">
+              <input type="checkbox" v-model="pdfOptions.include_matrix" class="rounded text-primary focus:ring-primary" />
+              <span>Rekapitulasi Presensi Harian (Tabel Siswa)</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer text-gray-800">
+              <input type="checkbox" v-model="pdfOptions.include_summary" class="rounded text-primary focus:ring-primary" />
+              <span>Ringkasan Presensi</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer text-gray-800">
+              <input type="checkbox" v-model="pdfOptions.include_findings" class="rounded text-primary focus:ring-primary" />
+              <span>Daftar Potensi Pelanggaran & Ketidaksesuaian Presensi</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer text-gray-800">
+              <input type="checkbox" v-model="pdfOptions.include_notes" class="rounded text-primary focus:ring-primary" />
+              <span>Catatan Kelengkapan Data & Tanda Tangan</span>
+            </label>
+          </div>
+        </div>
+        <p v-if="!hasSelectedPdfSection" class="text-red-600 font-medium">Pilih minimal satu bagian laporan untuk dicetak.</p>
+      </div>
+      <template #footer>
+        <div class="flex justify-end gap-2 w-full">
+          <button type="button" @click="pdfModalOpen = false" class="px-3 py-1.5 text-sm font-medium bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">Batal</button>
+          <button type="button" @click="confirmPdfExport" :disabled="!hasSelectedPdfSection || exportingPdf"
+            class="px-4 py-1.5 text-sm font-medium bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50">
+            {{ exportingPdf ? 'Menyiapkan PDF...' : 'Cetak PDF' }}
+          </button>
+        </div>
+      </template>
+    </BaseModal>
+
     <SessionDetailModal v-model="sessionModalOpen" :sessionId="activeSessionId" />
   </div>
 </template>
@@ -367,6 +408,17 @@ const findingOpen = ref(false)
 const findingStudent = ref(null)
 const sessionModalOpen = ref(false)
 const activeSessionId = ref(null)
+const pdfModalOpen = ref(false)
+const pdfOptions = reactive({
+  include_kop: true,
+  include_matrix: true,
+  include_summary: true,
+  include_findings: true,
+  include_notes: true
+})
+const hasSelectedPdfSection = computed(() =>
+  pdfOptions.include_matrix || pdfOptions.include_summary || pdfOptions.include_findings || pdfOptions.include_notes
+)
 let timerId = null
 
 const selectedYear = computed(() => lookups.value.academic_years.find((y) => Number(y.id) === Number(draft.academic_year_id)))
@@ -584,13 +636,24 @@ const resetFilters = () => {
   search.value = ''
 }
 
-const handleExport = async (type) => {
+const openPdfModal = () => {
+  if (!canExport.value) return
+  pdfModalOpen.value = true
+}
+
+const confirmPdfExport = async () => {
+  if (!hasSelectedPdfSection.value) return
+  pdfModalOpen.value = false
+  await handleExport('pdf', { ...pdfOptions })
+}
+
+const handleExport = async (type, extraParams = {}) => {
   if (!applied.value) return
   const isExcel = type === 'excel'
   if (isExcel) exportingExcel.value = true
   else exportingPdf.value = true
   try {
-    const params = requestParams(applied.value) // last applied filters only; never quick filter/search
+    const params = { ...requestParams(applied.value), ...extraParams } // last applied filters only; never quick filter/search
     const res = isExcel
       ? await lessonAttendanceService.exportIntegratedDailyExcel(params)
       : await lessonAttendanceService.exportIntegratedDailyPdf(params)
